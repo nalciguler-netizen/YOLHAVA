@@ -161,6 +161,10 @@ body.driving #hud{display:block} body.driving #top{display:none}
 .poi.ev{box-shadow:0 0 0 2px #2b9bff,0 1px 4px rgba(0,0,0,.5)}
 .stars{display:flex;gap:6px;margin:8px 0}.stars button{flex:1;font-size:26px;background:var(--raise);border:1px solid var(--line);border-radius:9px;padding:6px 0;color:#556}.stars button.on{color:var(--amber)}
 .mbox textarea{display:block;width:100%;min-height:110px;margin-top:4px;background:var(--raise);border:1px solid var(--line);color:var(--tx);border-radius:9px;padding:10px;font:inherit;font-size:16px}
+.alt{padding:9px 11px;border:1px solid var(--line);border-radius:10px;margin:6px 0;background:var(--raise)}
+.alt.on{border-color:var(--amber);box-shadow:inset 0 0 0 1px var(--amber)}
+.altm{position:absolute;transform:translate(-50%,-50%);background:#3a4556;color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:3px 8px;font-weight:700;font-size:13px;white-space:nowrap;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.5)}
+.altm small{display:block;font-weight:500;font-size:10px;color:#cfd6e0}
 .pl{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
 .pl .k{min-width:52px;color:var(--mut)}
 body[data-style=dark] .yh-base{filter:invert(1) hue-rotate(180deg) brightness(1.05) contrast(1.1) saturate(.45)}
@@ -238,7 +242,7 @@ body[data-style=dark] .yh-base{filter:invert(1) hue-rotate(180deg) brightness(1.
 
 <script>
 'use strict';
-const VERSION='1.4.2';
+const VERSION='1.5.1';
 // Sitene kısıtlı ortak TomTom anahtarı (test kullanıcıları için). Boşsa herkes kendi anahtarını girer.
 const DEFAULT_TT='';
 const ttKey=()=>(S.key||DEFAULT_TT).replace(/\s+/g,'');
@@ -336,6 +340,8 @@ const placeCv=cv=>L.DomUtil.setPosition(cv,map.containerPointToLayerPoint([0,0])
 const routeLayer=L.layerGroup().addTo(map);
 const ptLayer=L.layerGroup().addTo(map);
 const labelLayer=L.layerGroup().addTo(map);
+const altPane=map.createPane('alts');altPane.style.zIndex=390;
+const altLayer=L.layerGroup().addTo(map);
 const poiLayer=L.layerGroup();
 const incLayer=L.layerGroup().addTo(map);
 let flowLayers=null;
@@ -592,21 +598,33 @@ async function go(){
 }
 
 /* ---------- Rota + hava + olay analizi ---------- */
-async function getRoute(a,b){
-  const d=await getJSON(`https://router.project-osrm.org/route/v1/driving/${a.lon},${a.lat};${b.lon},${b.lat}?overview=full&geometries=geojson&annotations=duration,distance&steps=true`,25000);
+async function getRoutes(a,b){
+  const d=await getJSON(`https://router.project-osrm.org/route/v1/driving/${a.lon},${a.lat};${b.lon},${b.lat}?overview=full&geometries=geojson&annotations=duration,distance&steps=true&alternatives=3`,25000);
   if(d.code!=='Ok'||!d.routes||!d.routes.length)throw new Error('Bu iki nokta arasında karayolu rotası bulunamadı');
-  const r=d.routes[0],coords=r.geometry.coordinates.map(c=>[c[1],c[0]]);
+  return d.routes.map(parseRoute);
+}
+async function getRoute(a,b){return(await getRoutes(a,b))[0]}
+function parseRoute(r){
+  const coords=r.geometry.coordinates.map(c=>[c[1],c[0]]);
   const cumD=[0],cumT=[0];
   r.legs.forEach(leg=>{const an=leg.annotation;for(let i=0;i<an.distance.length;i++){cumD.push(cumD[cumD.length-1]+an.distance[i]);cumT.push(cumT[cumT.length-1]+an.duration[i])}});
   while(cumD.length<coords.length){cumD.push(cumD[cumD.length-1]);cumT.push(cumT[cumT.length-1])}
   const k=cumT[cumT.length-1]>0?r.duration/cumT[cumT.length-1]:1;for(let i=0;i<cumT.length;i++)cumT[i]*=k;
-  const steps=[];let from=0;
+  const steps=[],starts=[],byRef=new Map();let from=0,toll=false,motor=false;
   r.legs.forEach(leg=>(leg.steps||[]).forEach(s0=>{
     const loc=[s0.maneuver.location[1],s0.maneuver.location[0]];let bi=from,bd=1e12;
     for(let i=from;i<Math.min(coords.length,from+4000);i++){const d=distM(loc,coords[i]);if(d<bd){bd=d;bi=i}if(d<1)break}
     from=bi;const t=turnText(s0);if(t)steps.push({i:bi,...t});
+    const cls=new Set();(s0.intersections||[]).forEach(x=>(x.classes||[]).forEach(c=>cls.add(c)));
+    starts.push({i:bi,mw:cls.has('motorway')});if(cls.has('toll'))toll=true;if(cls.has('motorway'))motor=true;
+    const ref=String(s0.ref||'').split(';')[0].trim(),key=ref||s0.name||'';
+    if(key&&s0.distance)byRef.set(key,(byRef.get(key)||0)+s0.distance*(ref?1.5:1));
   }));
-  return {coords,cumD,cumT,distance:r.distance,duration:r.duration,steps};
+  const mw=new Uint8Array(coords.length);
+  starts.forEach((x,j)=>{if(!x.mw)return;const e=j+1<starts.length?starts[j+1].i:coords.length;for(let i=x.i;i<e;i++)mw[i]=1});
+  const refs=[...byRef.entries()].sort((p,q)=>q[1]-p[1]).slice(0,2).map(x=>x[0]);
+  return {coords,cumD,cumT,distance:r.distance,duration:r.duration,steps,mw,toll,motor,key:refs[0]||'',label:refs.join(' / ')||'Rota',
+    kind:motor?(toll?'Otoyol, ücretli':'Otoyol'):'Otoyol değil'};
 }
 function samplePoints(rt){
   const step=Math.max(6000,rt.distance/24),pts=[];let next=0;
@@ -640,6 +658,23 @@ async function ttIncidents(bbox,future){
     catch(e2){throw new Error('Klasik: '+e.message+' | Orbis: '+e2.message)}
   }
 }
+// Olay bizim gidiş yönümüzde mi? (karşı şeritteki olaylar elenir)
+function incSameDir(rt,cs,q,bi,pt){
+  const C=rt.coords,i0=Math.max(0,bi-3),i1=Math.min(C.length-1,bi+3);
+  if(cs.length>=2){
+    // TomTom olay çizgisi trafiğin aktığı yönde çizilir: yönünü rotamızın yönüyle karşılaştır
+    let a=q,b=q+1;if(b>=cs.length){a=q-1;b=q}
+    const A=[cs[a][1],cs[a][0]],B=[cs[b][1],cs[b][0]];
+    if(distM(A,B)>5&&distM(C[i0],C[i1])>5){
+      let df=Math.abs(bearing(A,B)-bearing(C[i0],C[i1]))%360;if(df>180)df=360-df;
+      return df<=100;
+    }
+  }
+  // Yönsüz nokta olay: otoyolda solda kalıyorsa karşı şerittedir
+  if(rt.mw&&rt.mw[bi]){const a=C[Math.min(bi,C.length-2)],b=C[Math.min(bi,C.length-2)+1],k=Math.cos(a[0]*Math.PI/180);
+    const cross=((b[1]-a[1])*k)*(pt[0]-a[0])-(b[0]-a[0])*((pt[1]-a[1])*k);if(cross>0)return false}
+  return true;
+}
 async function routeIncidents(rt,depart){
   if(!ttKey())return{reason:'nokey',list:[]};
   const C=rt.coords,D=rt.cumD,boxes=[];let s=0;
@@ -659,9 +694,10 @@ async function routeIncidents(rt,depart){
     const cs=g.type==='Point'?[g.coordinates]:(g.coordinates||[]);if(!cs.length)continue;
     const id=pr.id||JSON.stringify(cs[0]);if(seen.has(id))continue;seen.add(id);
     if(future){const a=pr.startTime?Date.parse(pr.startTime):null,b=pr.endTime?Date.parse(pr.endTime):null;if(a&&a>arrMs)continue;if(b&&b<depMs)continue}
-    const stp=Math.max(1,Math.floor(cs.length/8));let best=1e12,bi=0,bp=null;
-    for(let q=0;q<cs.length;q+=stp){const pt=[cs[q][1],cs[q][0]];for(const ri of ref){const dd=distM(pt,C[ri]);if(dd<best){best=dd;bi=ri;bp=pt}}}
+    const stp=Math.max(1,Math.floor(cs.length/8));let best=1e12,bi=0,bp=null,bq=0;
+    for(let q=0;q<cs.length;q+=stp){const pt=[cs[q][1],cs[q][0]];for(const ri of ref){const dd=distM(pt,C[ri]);if(dd<best){best=dd;bi=ri;bp=pt;bq=q}}}
     if(best>500)continue;
+    if(!incSameDir(rt,cs,bq,bi,bp))continue;
     if((pr.iconCategory??0)===6&&(pr.magnitudeOfDelay??0)<3)continue;
     const cat=pr.iconCategory??0,ev=(pr.events||[])[0]||{};
     const end=pr.endTime?new Date(pr.endTime):null;
@@ -690,36 +726,44 @@ function overallLevel(R){
   if(L2.some(i=>i.cat===1||i.cat===8))l=Math.max(l,2);else if(L2.some(i=>i.cat!==6))l=Math.max(l,1);
   return l;
 }
-async function analyze(from,to,depart){
-  const rt=await getRoute(from,to),pts=samplePoints(rt);
+async function analyze(from,to,depart,opt={}){
+  const routes=opt.routes||await getRoutes(from,to);
+  let sel=opt.sel;if(sel==null){sel=0;if(opt.pref){const j=routes.findIndex(r=>r.key===opt.pref);if(j>=0)sel=j}}
+  const rt=routes[sel],pts=samplePoints(rt);
   const [wx,inc]=await Promise.all([
     routeWeather(pts).catch(e=>{log('Rota havası hatası:',e.message);return null}),
     routeIncidents(rt,depart).catch(e=>{log('Trafik hatası:',e.message);return{reason:'err',msg:e.message,list:[]}})
   ]);
   const depTs=depart.getTime()/1000;
   if(wx)pts.forEach((p,i)=>{p.h=wxAt(wx[i],depTs+p.t);p.a=p.h?assess(p.h):null});
-  return {from,to,depart:depart.toISOString(),rt,pts,inc,overall:summarize(pts),best:wx?bestDepartures(pts,wx,depart):[],wxOk:!!wx,at:Date.now()};
+  return {from,to,depart:depart.toISOString(),rt,pts,inc,overall:summarize(pts),best:wx?bestDepartures(pts,wx,depart):[],wxOk:!!wx,at:Date.now(),alts:routes,sel};
 }
 
-async function runAnalysis(from,to,dep,tripId){
+async function runAnalysis(from,to,dep,tripId,opt){
   st.from=from;st.to=to;$('#inFrom').value=from.name;$('#inTo').value=to.name;$('#inDep').value=localInputValue(dep);drawPts();
   if(!D.on){setTab('route');sheet('mid')}
   $('#t-route').innerHTML='<div class="loader"><i></i>Rota, hava ve yol olayları hesaplanıyor…</div>';
   try{
-    const R=await analyze(from,to,dep);R.tripId=tripId;st.last=R;
+    const R=await analyze(from,to,dep,opt||{});R.tripId=tripId;st.last=R;
     $('#topSumTx').textContent=`${shortN(from.name)} → ${shortN(to.name)} • ${fmtDay(dep)} ${fmtTime(dep)}`;$('#top').classList.add('compact');
     D.idx=0;D.si=0;D.spoken=new Set();D.off=0;D.arrived=false;drawRoute(R);renderReport(R);if(tripId){saveSummary(tripId,R);renderTrips()}
-    loadPois(R);nameItems(R);
+    loadPois(R);nameItems(R);altSummaries(R);
     G.manual=false;updAutoChip();applyAutoWx(R,0,!D.on);
   }catch(e){
     log('Analiz hatası:',e.message);
     $('#t-route').innerHTML=`<div class="err" style="padding:14px 0">Hesaplanamadı: ${esc(e.message)}</div><div class="mut sm">İnternet bağlantını kontrol et; sorun sürerse Ayarlar → Sistem testi'ni çalıştır.</div><div class="acts"><button class="btn pri" id="btnRetry">Tekrar dene</button></div>`;
-    $('#btnRetry').onclick=()=>runAnalysis(from,to,dep,tripId);
+    $('#btnRetry').onclick=()=>runAnalysis(from,to,dep,tripId,opt);
   }
 }
 
 function drawRoute(R){
-  routeLayer.clearLayers();labelLayer.clearLayers();const C=R.rt.coords,P=R.pts,dep=new Date(R.depart);
+  routeLayer.clearLayers();labelLayer.clearLayers();altLayer.clearLayers();const C=R.rt.coords,P=R.pts,dep=new Date(R.depart);
+  (R.alts||[]).forEach((a,j)=>{if(j===R.sel)return;
+    L.polyline(a.coords,{pane:'alts',color:'#2a3240',weight:10,opacity:.6}).on('click',()=>selectAlt(j)).addTo(altLayer);
+    L.polyline(a.coords,{pane:'alts',color:'#9aa8bd',weight:6,opacity:.9}).on('click',()=>selectAlt(j)).addTo(altLayer);
+    const m=a.coords[Math.floor(a.coords.length*0.5)],dd=Math.round((a.duration-R.rt.duration)/60);
+    L.marker(m,{icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="altm">${dd>0?'+':''}${dd} dk<small>${esc(a.label)}</small></div>`})}).on('click',()=>selectAlt(j)).addTo(altLayer);
+  });
   L.polyline(C,{color:'#fff',weight:12,opacity:.9,interactive:false}).addTo(routeLayer);
   L.polyline(C,{color:'#000',weight:9,opacity:.6,interactive:false}).addTo(routeLayer);
   for(let i=0;i<P.length-1;i++){
@@ -759,6 +803,12 @@ function renderReport(R){
     <div class="rt">${esc(shortN(R.from.name))} → ${esc(shortN(R.to.name))}</div>
     <div class="mut sm">${fmtKm(R.rt.distance)}, ${fmtDur(R.rt.duration)} • ${fmtDay(dep)} ${fmtTime(dep)} çıkış, ${fmtTime(arr)} varış</div></div>
     <div class="acts"><button class="btn pri" id="btnDrive" style="flex:1;font-size:18px;padding:12px">▶ Yola çık</button></div>`;
+  const A=R.alts||[R.rt];
+  h+=`<h4>${A.length>1?'Rotalar':'Rota'}</h4>`+A.map((a,j)=>{const dd=Math.round((a.duration-R.rt.duration)/60);
+    return `<div class="alt${j===R.sel?' on':''}" data-j="${j}"><div class="ch"><b>${esc(a.label)}</b><span class="mut sm">${esc(a.kind)}</span></div>
+      <div class="sm">${fmtKm(a.distance)} • ${fmtDur(a.duration)}${j===R.sel?' • <b style="color:var(--amber)">seçili</b>':` • ${dd>0?'+':''}${dd} dk`}</div>
+      <div id="altlv-${j}" class="sm" style="margin-top:3px">${j===R.sel?`<span class="badge" style="--c:${LVL[R.overall.lvl].c}">${LVL[R.overall.lvl].t}</span>`:'<span class="mut">hava kontrol ediliyor…</span>'}</div></div>`}).join('')+
+    (A.length>1?'<div class="mut sm">Başka rotaya geçmek için karta ya da haritadaki gri çizgiye dokun.</div>':'<div class="mut sm">Bu güzergah için alternatif rota bulunamadı.</div>');
   h+='<h4>Hava, geçeceğin saatte</h4>';
   if(!R.wxOk)h+='<div class="err">Hava verisi alınamadı.</div>';
   else if(R.pts.every(p=>!p.h))h+='<div class="mut">Bu tarih tahmin aralığının dışında (en fazla 16 gün ileri).</div>';
@@ -793,10 +843,29 @@ $('#t-route').addEventListener('click',e=>{
   else if(t.closest('.pl[data-lat]')){const d=t.closest('.pl');sheet('min');map.setView([+d.dataset.lat,+d.dataset.lon],15)}
   else if(t.closest('#btnSaveTrip'))openTripModal();
   else if(t.closest('#btnFit')){sheet('min');setTimeout(()=>fitRoute(R),300)}
-  else if(t.closest('#btnRe'))runAnalysis(R.from,R.to,new Date(R.depart),R.tripId);
-  else if(t.closest('.bar'))runAnalysis(R.from,R.to,new Date(+t.closest('.bar').dataset.ts*1000),R.tripId);
+  else if(t.closest('#btnRe'))runAnalysis(R.from,R.to,new Date(R.depart),R.tripId,{pref:R.rt.key});
+  else if(t.closest('.alt[data-j]')){const j=+t.closest('.alt').dataset.j;if(j!==R.sel)selectAlt(j)}
+  else if(t.closest('.bar'))runAnalysis(R.from,R.to,new Date(+t.closest('.bar').dataset.ts*1000),R.tripId,{routes:R.alts,sel:R.sel});
   else if(t.closest('.inc')){const d=t.closest('.inc');sheet('min');map.setView([+d.dataset.lat,+d.dataset.lon],14)}
 });
+
+function selectAlt(j){
+  const R=st.last;if(!R||!R.alts||!R.alts[j])return;
+  if(R.tripId){const t=trips.find(x=>x.id===R.tripId);if(t&&R.alts[j].key){t.pref=R.alts[j].key;store.set('trips',trips);toast(`Bu seyahat için tercih: ${R.alts[j].label}`)}}
+  runAnalysis(R.from,R.to,new Date(R.depart),R.tripId,{routes:R.alts,sel:j});
+}
+async function altSummaries(R){
+  const dep=new Date(R.depart).getTime()/1000;
+  R.alts[R.sel]._sum={lvl:R.overall.lvl,items:R.overall.items.map(i=>i.w)};
+  for(const [j,a] of R.alts.entries()){
+    if(!a._sum){try{const pts=samplePoints(a),wx=await routeWeather(pts);let lvl=0;const items=new Set();
+      pts.forEach((p,i)=>{const h=wxAt(wx[i],dep+p.t);if(!h)return;const as=assess(h);lvl=Math.max(lvl,as.lvl);as.why.forEach(w=>items.add(w))});
+      a._sum={lvl,items:[...items]}}catch(e){log('Alternatif rota havası:',e.message);continue}}
+    if(st.last!==R)return;
+    const el=document.querySelector(`#altlv-${j}`);
+    if(el)el.innerHTML=`<span class="badge" style="--c:${LVL[a._sum.lvl].c}">${LVL[a._sum.lvl].t}</span>${a._sum.items.length?' <span class="mut sm">'+esc(a._sum.items.slice(0,2).join(', '))+'</span>':''}`;
+  }
+}
 
 /* ---------- Kayıtlı seyahatler ---------- */
 function nextOccs(t,n=2){
@@ -827,7 +896,7 @@ function renderTrips(){
 }
 $('#tripList').addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b)return;const t=trips.find(x=>x.id===b.closest('.card').dataset.id);if(!t)return;
-  if(b.dataset.act==='rep')runAnalysis(t.from,t.to,new Date(+b.dataset.ts),t.id);
+  if(b.dataset.act==='rep')runAnalysis(t.from,t.to,new Date(+b.dataset.ts),t.id,{pref:t.pref});
   else if(b.dataset.act==='edit')openTripModal(t);
   else if(b.dataset.act==='rem')openReminder(t);
   else if(b.dataset.act==='del'&&confirm(`“${t.name}” silinsin mi?`)){trips=trips.filter(x=>x.id!==t.id);delete sums[t.id];store.set('trips',trips);store.set('sums',sums);renderTrips();toast('Seyahat silindi')}
@@ -855,6 +924,7 @@ function openTripModal(edit){
   $('#mSave').onclick=()=>{
     t.name=$('#mName').value.trim()||t.name;t.time=$('#mTime').value||'08:00';t.days.sort();
     if(!t.days.length){toast('En az bir gün seç');return}
+    if(!edit&&st.last&&st.last.rt.key)t.pref=st.last.rt.key;
     if(edit)trips=trips.map(x=>x.id===edit.id?t:x);else{t.id=Date.now().toString(36);trips.push(t)}
     store.set('trips',trips);m.hidden=true;renderTrips();toast(edit?'Seyahat güncellendi':'Seyahat kaydedildi');
     if(!edit){if(st.last)st.last.tripId=t.id;setTab('trips')}
@@ -865,7 +935,7 @@ async function autoCheck(manual){
   const now=Date.now();let n=0;
   for(const t of trips){
     const o=nextOccs(t,1)[0];if(!o||(!manual&&o-now>36*3600e3))continue;if(n++>=6)break;
-    try{const R=await analyze(t.from,t.to,o);saveSummary(t.id,R);const l=overallLevel(R);
+    try{const R=await analyze(t.from,t.to,o,{pref:t.pref});saveSummary(t.id,R);const l=overallLevel(R);
       if(l>=2)toast(`${t.name}, ${fmtDay(o)} ${fmtTime(o)}: ${LVL[l].t}`,6000)}
     catch(e){log('Otomatik kontrol',t.name,e.message)}
     renderTrips();
@@ -1015,10 +1085,10 @@ async function fetchPois(rt){
     const cross=((b[1]-a[1])*k)*(lat-a[0])-(b[0]-a[0])*((lon-a[1])*k);
     const j0=Math.max(0,n.i-6),j1=Math.min(C.length-1,n.i+6),dt=rt.cumT[j1]-rt.cumT[j0];
     const kmh=dt>0?(rt.cumD[j1]-rt.cumD[j0])/dt*3.6:0;
-    return{ev,named:!!(t.name||t.brand),name:t.name||t.brand||t.operator||(ev?'Şarj istasyonu':'Akaryakıt istasyonu'),extra,lat,lon,d:rt.cumD[n.i],t:rt.cumT[n.i],left:cross>0,fast:kmh>75,off:n.dist};
+    return{ev,named:!!(t.name||t.brand),name:t.name||t.brand||t.operator||(ev?'Şarj istasyonu':'Akaryakıt istasyonu'),extra,lat,lon,d:rt.cumD[n.i],t:rt.cumT[n.i],left:cross>0,mwy:!!(rt.mw&&rt.mw[n.i]),off:n.dist};
   }).filter(Boolean)
     // Bölünmüş yolda (otoyol, hızlı devlet yolu) karşı yöndeki istasyonlar gösterilmez
-    .filter(p=>!(p.fast&&p.left))
+    .filter(p=>!(p.mwy&&p.left))
     .sort((a,b)=>a.d-b.d);
   // Aynı istasyonun tekrarlarını birleştir (nokta + bina, akaryakıt içindeki şarj)
   const out=[];
@@ -1117,7 +1187,7 @@ function voiceNav(R,here,kmh){
 function reroute(auto){
   if(!D.last||!st.last)return;const R=st.last;D.lastRe=Date.now();
   if(auto)say('Rotadan çıktınız. Rota yeniden hesaplanıyor.',true);
-  runAnalysis({name:'Konumum',lat:D.last[0],lon:D.last[1]},R.to,new Date(),R.tripId);
+  runAnalysis({name:'Konumum',lat:D.last[0],lon:D.last[1]},R.to,new Date(),R.tripId,{pref:R.rt.key});
 }
 $('#hudVoice').onclick=()=>{S.voice=!S.voice;saveS();$('#hudVoice').textContent=S.voice?'🔊':'🔇';$('#cbVoice').checked=S.voice;if(!S.voice&&'speechSynthesis' in window)speechSynthesis.cancel();else say('Sesli komutlar açık')};
 $('#cbVoice').checked=S.voice;$('#hudVoice').textContent=S.voice?'🔊':'🔇';
@@ -1232,7 +1302,7 @@ function openReminder(t){
   $('#chPart').classList.toggle('on',S.particles);setLayer(S.userLayer||S.layer);renderTrips();
   resetParticles();renderField();requestAnimationFrame(animate);loadGrid();
   const tid=new URLSearchParams(location.search).get('trip'),dt=tid&&trips.find(x=>x.id===tid);
-  if(dt){history.replaceState(null,'',location.pathname);const o=nextOccs(dt,1)[0]||new Date();runAnalysis(dt.from,dt.to,o,dt.id)}
+  if(dt){history.replaceState(null,'',location.pathname);const o=nextOccs(dt,1)[0]||new Date();runAnalysis(dt.from,dt.to,o,dt.id,{pref:dt.pref})}
   else if(tid)toast('Bu seyahat bu telefonda kayıtlı değil');
   if(!dt&&trips.length){const t=trips[0];map.fitBounds(L.latLngBounds([[t.from.lat,t.from.lon],[t.to.lat,t.to.lon]]),{padding:[60,160]});setTimeout(()=>autoCheck(false),1500)}
   updPoiVis();updAutoChip();
