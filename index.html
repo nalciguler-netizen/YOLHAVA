@@ -59,9 +59,10 @@ canvas.ov{position:absolute;left:0;top:0;pointer-events:none;transition:opacity 
 /* Sağ katman düğmeleri */
 .chipcol{position:fixed;top:var(--chipsTop,calc(var(--safeT) + 90px));z-index:900;display:flex;flex-direction:column;gap:4px}
 #chips{right:8px} #tools{left:8px}
-.chip{width:56px;height:46px;padding:2px;border-radius:10px;background:var(--panel);border:1px solid var(--line);font-size:17px;line-height:1;color:var(--tx);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.chip{width:56px;height:var(--chipH,46px);padding:2px;border-radius:10px;background:var(--panel);border:1px solid var(--line);font-size:17px;line-height:1;color:var(--tx);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
 .chip small{font-size:10px;line-height:1.05;font-family:var(--head);font-weight:600;color:var(--mut);text-align:center}
 .chip.on small{color:var(--amber)}
+body.tight .chip small{display:none}
 .chip.on{border-color:var(--amber);box-shadow:inset 0 0 0 1px var(--amber)}
 
 
@@ -236,7 +237,7 @@ body[data-style=dark] .yh-base{filter:invert(1) hue-rotate(180deg) brightness(1.
 
 <script>
 'use strict';
-const VERSION='1.4.0';
+const VERSION='1.4.1';
 // Sitene kısıtlı ortak TomTom anahtarı (test kullanıcıları için). Boşsa herkes kendi anahtarını girer.
 const DEFAULT_TT='';
 const ttKey=()=>(S.key||DEFAULT_TT).replace(/\s+/g,'');
@@ -912,8 +913,15 @@ $('#btnTest').onclick=async()=>{
   await T('Uygulama modu',async()=>matchMedia('(display-mode: standalone)').matches?'ana ekrandan açıldı':'tarayıcıda açık');
 };
 
-function posChips(){const el=document.body.classList.contains('driving')?$('#hud'):$('#top');document.documentElement.style.setProperty('--chipsTop',(el.getBoundingClientRect().bottom+10)+'px')}
-if(window.ResizeObserver){const ro=new ResizeObserver(posChips);ro.observe($('#top'));ro.observe($('#hud'))}
+function posChips(){
+  const el=document.body.classList.contains('driving')?$('#hud'):$('#top'),top=el.getBoundingClientRect().bottom+10;
+  const bottom=$('#sheet').getBoundingClientRect().top-8,n=Math.max($('#chips').children.length,$('#tools').children.length);
+  const R=document.documentElement.style;R.setProperty('--chipsTop',top+'px');
+  if($('#sheet').className!=='min')return;
+  const h=Math.max(30,Math.min(46,Math.floor((bottom-top-(n-1)*4)/n)));
+  R.setProperty('--chipH',h+'px');document.body.classList.toggle('tight',h<40);
+}
+if(window.ResizeObserver){const ro=new ResizeObserver(posChips);ro.observe($('#top'));ro.observe($('#hud'));ro.observe($('#sheet'))}
 window.addEventListener('resize',posChips);
 
 
@@ -943,7 +951,8 @@ function openFeedback(context){
   $('#fbSend').onclick=()=>{
     const txt=$('#fbText').value.trim();
     if(!f.stars&&!f.type&&!txt){toast('Bir puan, tür ya da açıklama ekle');return}
-    let msg=`🚗 YolHava geri bildirimi\n${f.stars?'★'.repeat(f.stars)+'☆'.repeat(5-f.stars)+` (${f.stars}/5)`:''}${f.type?'  '+f.type:''}\n${context?'📍 '+context+'\n':''}\n${txt||'(açıklama yok)'}`;
+    const head=[f.stars?'★'.repeat(f.stars)+'☆'.repeat(5-f.stars)+` (${f.stars}/5)`:'',f.type].filter(Boolean).join('  ');
+    let msg=['🚗 YolHava geri bildirimi',head,context?'📍 '+context:''].filter(Boolean).join('\n')+`\n\n${txt||'(açıklama yok)'}`;
     if($('#fbTech').checked){
       const errs=LOG.filter(l=>/HATA|hata|❌/.test(l)).slice(-5);
       msg+=`\n\n— Teknik —\nSürüm ${VERSION} • ${deviceInfo()}\nKatman: ${S.layer}${S.autoWx?' (oto)':''} • Ses: ${S.voice?'açık':'kapalı'} • TomTom: ${ttKey()?'var':'yok'}`;
