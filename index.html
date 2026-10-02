@@ -157,6 +157,7 @@ body.driving #hud{display:block} body.driving #top{display:none}
 .me{position:absolute;transform:translate(-50%,-50%);width:36px;height:36px}
 .me svg{width:36px;height:36px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
 .poi{position:absolute;transform:translate(-50%,-50%);width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:13px;background:#fff;box-shadow:0 0 0 2px var(--sign),0 1px 4px rgba(0,0,0,.5)}
+.poi.both{box-shadow:0 0 0 2px var(--sign),0 0 0 4px #2b9bff,0 1px 4px rgba(0,0,0,.5)}
 .poi.ev{box-shadow:0 0 0 2px #2b9bff,0 1px 4px rgba(0,0,0,.5)}
 .stars{display:flex;gap:6px;margin:8px 0}.stars button{flex:1;font-size:26px;background:var(--raise);border:1px solid var(--line);border-radius:9px;padding:6px 0;color:#556}.stars button.on{color:var(--amber)}
 .mbox textarea{display:block;width:100%;min-height:110px;margin-top:4px;background:var(--raise);border:1px solid var(--line);color:var(--tx);border-radius:9px;padding:10px;font:inherit;font-size:16px}
@@ -237,7 +238,7 @@ body[data-style=dark] .yh-base{filter:invert(1) hue-rotate(180deg) brightness(1.
 
 <script>
 'use strict';
-const VERSION='1.4.1';
+const VERSION='1.4.2';
 // Sitene kısıtlı ortak TomTom anahtarı (test kullanıcıları için). Boşsa herkes kendi anahtarını girer.
 const DEFAULT_TT='';
 const ttKey=()=>(S.key||DEFAULT_TT).replace(/\s+/g,'');
@@ -1004,13 +1005,31 @@ async function fetchPois(rt){
   let r;try{r=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:c.signal})}finally{clearTimeout(tm)}
   if(!r.ok)throw new Error('istasyon servisi '+r.status);
   const d=await r.json();
-  return (d.elements||[]).map(e=>{
+  const list=(d.elements||[]).map(e=>{
     const lat=e.lat??(e.center&&e.center.lat),lon=e.lon??(e.center&&e.center.lon);if(lat==null)return null;
     const t=e.tags||{},ev=t.amenity==='charging_station',n=nearestOnRoute(rt,[lat,lon]);
     const sockets=Object.keys(t).filter(k=>/^socket:[^:]+$/.test(k)).map(k=>k.slice(7).replace(/_/g,' ')+(t[k]&&t[k]!=='yes'?` ×${t[k]}`:''));
     const extra=ev?[t.operator,sockets.join(', '),t.capacity?`${t.capacity} araç`:'' ].filter(Boolean).join(' • '):[t.brand&&t.brand!==t.name?t.brand:'',t.opening_hours==='24/7'?'7/24 açık':''].filter(Boolean).join(' • ');
-    return{ev,name:t.name||t.brand||t.operator||(ev?'Şarj istasyonu':'Akaryakıt istasyonu'),extra,lat,lon,d:rt.cumD[n.i],t:rt.cumT[n.i]};
-  }).filter(Boolean).sort((a,b)=>a.d-b.d);
+    // Rotanın hangi tarafında? (sağ şeritten girilebilir mi)
+    const i=Math.min(n.i,C.length-2),a=C[i],b=C[i+1],k=Math.cos(a[0]*Math.PI/180);
+    const cross=((b[1]-a[1])*k)*(lat-a[0])-(b[0]-a[0])*((lon-a[1])*k);
+    const j0=Math.max(0,n.i-6),j1=Math.min(C.length-1,n.i+6),dt=rt.cumT[j1]-rt.cumT[j0];
+    const kmh=dt>0?(rt.cumD[j1]-rt.cumD[j0])/dt*3.6:0;
+    return{ev,named:!!(t.name||t.brand),name:t.name||t.brand||t.operator||(ev?'Şarj istasyonu':'Akaryakıt istasyonu'),extra,lat,lon,d:rt.cumD[n.i],t:rt.cumT[n.i],left:cross>0,fast:kmh>75,off:n.dist};
+  }).filter(Boolean)
+    // Bölünmüş yolda (otoyol, hızlı devlet yolu) karşı yöndeki istasyonlar gösterilmez
+    .filter(p=>!(p.fast&&p.left))
+    .sort((a,b)=>a.d-b.d);
+  // Aynı istasyonun tekrarlarını birleştir (nokta + bina, akaryakıt içindeki şarj)
+  const out=[];
+  for(const p of list){
+    const tw=out.find(q=>distM([q.lat,q.lon],[p.lat,p.lon])<90);
+    if(!tw){out.push(p);continue}
+    if(tw.ev===p.ev){if(!tw.named&&p.named){tw.name=p.name;tw.named=true}if(!tw.extra&&p.extra)tw.extra=p.extra}
+    else if(!tw.ev&&p.ev){tw.alsoEv=true}
+    else{const keep={...p,alsoEv:true};Object.assign(tw,keep)}
+  }
+  return out;
 }
 async function loadPois(R){
   try{R.pois=await fetchPois(R.rt)}catch(e){log('İstasyon hatası:',e.message);R.pois=null;R.poiErr=e.message}
@@ -1018,8 +1037,8 @@ async function loadPois(R){
   drawPois(R);renderPoiBox(R);
 }
 function drawPois(R){
-  st.poiMarks=(R.pois||[]).slice().sort((a,b)=>b.ev-a.ev).map(p=>L.marker([p.lat,p.lon],{icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="poi${p.ev?' ev':''}">${p.ev?'🔌':'⛽'}</div>`})})
-    .bindPopup(`<b>${esc(p.name)}</b><br>${Math.round(p.d/1000)}. km${p.extra?'<br>'+esc(p.extra):''}`));
+  st.poiMarks=(R.pois||[]).slice().sort((a,b)=>b.ev-a.ev).map(p=>L.marker([p.lat,p.lon],{icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="poi${p.ev?' ev':''}${p.alsoEv?' both':''}">${p.ev?'🔌':'⛽'}</div>`})})
+    .bindPopup(`<b>${esc(p.name)}</b><br>${Math.round(p.d/1000)}. km${p.alsoEv?' • 🔌 şarj da var':''}${p.extra?'<br>'+esc(p.extra):''}`));
   declutter();updPoiVis();
 }
 function updPoiVis(){const on=S.poi&&map.getZoom()>=12;if(on&&!map.hasLayer(poiLayer))poiLayer.addTo(map);if(!on&&map.hasLayer(poiLayer))map.removeLayer(poiLayer);$('#chPoi').classList.toggle('on',S.poi)}
@@ -1028,11 +1047,11 @@ $('#chPoi').onclick=()=>{S.poi=!S.poi;saveS();updPoiVis();toast(S.poi?'İstasyon
 function renderPoiBox(R){
   const el=$('#poiBox');if(!el)return;
   if(!R.pois){el.innerHTML=`<span class="err">İstasyonlar alınamadı${R.poiErr?': '+esc(R.poiErr):''}</span>`;return}
-  const f=R.pois.filter(p=>!p.ev).length,e=R.pois.filter(p=>p.ev).length;
+  const f=R.pois.filter(p=>!p.ev).length,e=R.pois.filter(p=>p.ev||p.alsoEv).length;
   if(!R.pois.length){el.textContent='Rota üzerinde kayıtlı istasyon bulunamadı.';return}
   const list=R.poiAll?R.pois:R.pois.slice(0,10);
-  el.innerHTML=`<div style="color:var(--tx);margin-bottom:4px">⛽ ${f} akaryakıt, 🔌 ${e} şarj istasyonu (rotanın hemen kenarında)</div>`+
-    list.map(p=>`<div class="pl" data-lat="${p.lat}" data-lon="${p.lon}"><span class="k">${Math.round(p.d/1000)}. km</span><span>${p.ev?'🔌':'⛽'} <b style="color:var(--tx)">${esc(p.name)}</b>${p.extra?'<br>'+esc(p.extra):''}</span></div>`).join('')+
+  el.innerHTML=`<div style="color:var(--tx);margin-bottom:4px">⛽ ${f} akaryakıt, 🔌 ${e} şarj istasyonu (rotanın kenarında, otoyolda sadece kendi yönünde)</div>`+
+    list.map(p=>`<div class="pl" data-lat="${p.lat}" data-lon="${p.lon}"><span class="k">${Math.round(p.d/1000)}. km</span><span>${p.ev?'🔌':'⛽'}${p.alsoEv?'🔌':''} <b style="color:var(--tx)">${esc(p.name)}</b>${p.extra?'<br>'+esc(p.extra):''}</span></div>`).join('')+
     (!R.poiAll&&R.pois.length>10?`<div class="acts"><button class="btn sm" id="poiMore">Tümünü göster (${R.pois.length})</button></div>`:'');
 }
 
@@ -1170,7 +1189,7 @@ function onPos(p){
   const hz=[...R.pts.filter(q=>q.a&&q.a.lvl>=1&&q.d>here).map(q=>({d:q.d,txt:q.a.why[0]||'Dikkat',c:LVL[q.a.lvl].c})),
             ...((R.inc&&R.inc.list)||[]).filter(i=>i.d>here).map(i=>({d:i.d,txt:(INC[i.cat]||INC[0])[1],c:'#ff4057'}))].sort((a,b)=>a.d-b.d)[0];
   $('#hudNext').innerHTML=hz?`<span style="color:${hz.c}">⚠️ ${fmtKm(hz.d-here)} sonra: ${esc(hz.txt)}</span>`:'<span class="ok">Önünde bildirilmiş risk yok</span>';
-  const nf=(R.pois||[]).find(x=>!x.ev&&x.d>here),ne=(R.pois||[]).find(x=>x.ev&&x.d>here);
+  const nf=(R.pois||[]).find(x=>!x.ev&&x.d>here),ne=(R.pois||[]).find(x=>(x.ev||x.alsoEv)&&x.d>here);
   $('#hudPoi').textContent=[nf?`⛽ ${fmtKm(nf.d-here)} ${nf.name}`:'',ne?`🔌 ${fmtKm(ne.d-here)} ${ne.name}`:''].filter(Boolean).join('   ');
 }
 
