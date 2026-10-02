@@ -57,10 +57,13 @@ canvas.ov{position:absolute;left:0;top:0;pointer-events:none;transition:opacity 
 .sg{padding:10px 6px;border-top:1px solid var(--line)} .sg small{display:block;color:var(--mut);font-size:12px}
 
 /* Sağ katman düğmeleri */
-#chips{position:fixed;right:10px;top:var(--chipsTop,calc(var(--safeT) + 90px));z-index:900;display:flex;flex-direction:column;gap:4px}
-.chip{width:40px;height:38px;border-radius:10px;background:var(--panel);border:1px solid var(--line);font-size:17px;color:var(--tx);position:relative}
+.chipcol{position:fixed;top:var(--chipsTop,calc(var(--safeT) + 90px));z-index:900;display:flex;flex-direction:column;gap:4px}
+#chips{right:8px} #tools{left:8px}
+.chip{width:56px;height:46px;padding:2px;border-radius:10px;background:var(--panel);border:1px solid var(--line);font-size:17px;line-height:1;color:var(--tx);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.chip small{font-size:10px;line-height:1.05;font-family:var(--head);font-weight:600;color:var(--mut);text-align:center}
+.chip.on small{color:var(--amber)}
 .chip.on{border-color:var(--amber);box-shadow:inset 0 0 0 1px var(--amber)}
-#chips hr{border:0;height:4px;margin:0}
+
 
 /* Alt panel */
 #sheet{position:fixed;left:0;right:0;bottom:0;z-index:1000;background:var(--panel);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
@@ -98,6 +101,7 @@ h3{font-size:19px} h4{font-size:17px}
 .badge{display:inline-block;padding:2px 9px;border-radius:6px;background:var(--c);color:#111;font-family:var(--head);font-weight:700;font-size:14px}
 .rt{font-family:var(--head);font-weight:700;font-size:20px;margin:4px 0 2px;line-height:1.2}
 .wi{padding:6px 0;border-bottom:1px solid var(--line)}
+.wpl{font-weight:600}
 .inc{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
 .ie{font-size:22px;line-height:1}
 .bars{display:flex;align-items:flex-end;gap:3px;height:84px;padding-top:6px;overflow-x:auto}
@@ -153,6 +157,8 @@ body.driving #hud{display:block} body.driving #top{display:none}
 .me svg{width:36px;height:36px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
 .poi{position:absolute;transform:translate(-50%,-50%);width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:13px;background:#fff;box-shadow:0 0 0 2px var(--sign),0 1px 4px rgba(0,0,0,.5)}
 .poi.ev{box-shadow:0 0 0 2px #2b9bff,0 1px 4px rgba(0,0,0,.5)}
+.stars{display:flex;gap:6px;margin:8px 0}.stars button{flex:1;font-size:26px;background:var(--raise);border:1px solid var(--line);border-radius:9px;padding:6px 0;color:#556}.stars button.on{color:var(--amber)}
+.mbox textarea{display:block;width:100%;min-height:110px;margin-top:4px;background:var(--raise);border:1px solid var(--line);color:var(--tx);border-radius:9px;padding:10px;font:inherit;font-size:16px}
 .pl{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
 .pl .k{min-width:52px;color:var(--mut)}
 body[data-style=dark] .yh-base{filter:invert(1) hue-rotate(180deg) brightness(1.05) contrast(1.1) saturate(.45)}
@@ -162,27 +168,30 @@ body[data-style=dark] .yh-base{filter:invert(1) hue-rotate(180deg) brightness(1.
 <div id="map"></div>
 
 <div id="top">
-  <div id="topSum"><span id="topSumTx"></span><button class="ib" id="btnEdit" aria-label="Rotayı düzenle">✎</button></div>
+  <div id="topSum"><span id="topSumTx"></span><button class="btn pri" id="btnStart">▶ Başla</button><button class="ib" id="btnEdit" aria-label="Rotayı düzenle">✎</button></div>
   <div class="row"><span class="pin a"></span><input id="inFrom" placeholder="Nereden?" autocomplete="off" enterkeyhint="next"><button class="ib" id="btnGps" aria-label="Konumumu başlangıç yap">◎</button></div>
   <div class="row"><span class="pin b"></span><input id="inTo" placeholder="Nereye?" autocomplete="off" enterkeyhint="go"><button class="ib" id="btnSwap" aria-label="Yer değiştir">⇅</button></div>
   <div class="row"><input id="inDep" type="datetime-local" aria-label="Çıkış zamanı"><button class="btn pri" id="btnGo">Yolu kontrol et</button></div>
   <div id="sugg"></div>
 </div>
 
-<div id="hud"><div id="hudTurn"></div><div id="hudMain">Konum bekleniyor…</div><div class="sm mut" id="hudSub"></div><div id="hudNext"></div><div class="sm mut" id="hudPoi"></div>
+<div id="hud"><div id="hudTurn"></div><div id="hudMain">Konum bekleniyor…</div><div class="sm mut" id="hudSub"></div><div class="sm" id="hudNow"></div><div id="hudNext"></div><div class="sm mut" id="hudPoi"></div>
   <div class="acts"><button class="btn sm" id="hudVoice" aria-label="Sesi aç/kapat">🔊</button><button class="btn sm" id="hudCenter">Ortala</button><button class="btn sm pri" id="hudReroute" hidden>Yeniden hesapla</button><button class="btn sm" id="hudStop" style="margin-left:auto">Sürüşü bitir</button></div></div>
 
-<div id="chips">
-  <button class="chip" data-l="temp" aria-label="Sıcaklık">🌡️</button>
-  <button class="chip" data-l="prec" aria-label="Yağış">🌧️</button>
-  <button class="chip" data-l="wind" aria-label="Rüzgar">💨</button>
-  <button class="chip" data-l="cloud" aria-label="Bulut">☁️</button>
-  <button class="chip" data-l="none" aria-label="Hava katmanını kapat">⦸</button>
-  <hr>
-  <button class="chip" id="chPart" aria-label="Rüzgar akışı">〰️</button>
-  <button class="chip" id="chTraffic" aria-label="Trafik katmanı">🚦</button>
-  <button class="chip" id="chPoi" aria-label="Benzinlik ve şarj istasyonları">⛽</button>
-  <button class="chip" id="chLoc" aria-label="Konumuma git">📍</button>
+<div id="chips" class="chipcol">
+  <button class="chip" id="chAuto"><span>🔄</span><small>Otomatik</small></button>
+  <button class="chip" data-l="temp"><span>🌡️</span><small>Sıcaklık</small></button>
+  <button class="chip" data-l="prec"><span>🌧️</span><small>Yağış</small></button>
+  <button class="chip" data-l="kar"><span>❄️</span><small>Kar</small></button>
+  <button class="chip" data-l="sis"><span>🌫️</span><small>Sis</small></button>
+  <button class="chip" data-l="wind"><span>💨</span><small>Rüzgar</small></button>
+  <button class="chip" data-l="none"><span>⦸</span><small>Kapat</small></button>
+</div>
+<div id="tools" class="chipcol">
+  <button class="chip" id="chLoc"><span>📍</span><small>Konumum</small></button>
+  <button class="chip" id="chPoi"><span>⛽</span><small>İstasyon</small></button>
+  <button class="chip" id="chTraffic"><span>🚦</span><small>Trafik</small></button>
+  <button class="chip" id="chPart"><span>〰️</span><small>Rüzgar akışı</small></button>
 </div>
 
 <div id="sheet" class="min">
@@ -197,6 +206,7 @@ body[data-style=dark] .yh-base{filter:invert(1) hue-rotate(180deg) brightness(1.
       <div id="tripList"></div>
     </section>
     <section id="t-set" hidden>
+      <div class="acts"><button class="btn pri" id="btnFeedback" style="flex:1">💬 Geri bildirim gönder</button></div>
       <h3>Kaza ve yol çalışması verisi</h3>
       <p class="mut sm">Kaza, yol çalışması, kapalı yol ve trafik akışı TomTom'dan gelir. Ücretsiz anahtar: developer.tomtom.com → Register → giriş yap → Dashboard → API Keys → anahtarı kopyala.</p>
       <div class="row2"><input id="inKey" placeholder="TomTom API anahtarı" autocomplete="off"><button class="btn" id="btnKey">Kaydet</button></div>
@@ -226,7 +236,10 @@ body[data-style=dark] .yh-base{filter:invert(1) hue-rotate(180deg) brightness(1.
 
 <script>
 'use strict';
-const VERSION='1.2.0';
+const VERSION='1.4.0';
+// Sitene kısıtlı ortak TomTom anahtarı (test kullanıcıları için). Boşsa herkes kendi anahtarını girer.
+const DEFAULT_TT='';
+const ttKey=()=>(S.key||DEFAULT_TT).replace(/\s+/g,'');
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -245,8 +258,9 @@ const store={
   get(k,d){try{const v=localStorage.getItem('yh_'+k);return v?JSON.parse(v):d}catch(e){return d}},
   set(k,v){try{localStorage.setItem('yh_'+k,JSON.stringify(v))}catch(e){log('Kayıt hatası',e.message)}}
 };
-let S=Object.assign({key:'',style:'dark',particles:true,layer:'temp',wxOp:0.55,roadsTop:true,poi:true,voice:true},store.get('settings',{}));
+let S=Object.assign({key:'',style:'dark',particles:true,layer:'temp',wxOp:0.55,roadsTop:true,poi:true,voice:true,autoWx:true},store.get('settings',{}));
 const saveS=()=>store.set('settings',S);
+if(S.layer==='cloud')S.layer='temp';if(S.userLayer==='cloud')S.userLayer='temp';
 let trips=store.get('trips',[]);
 let sums=store.get('sums',{});
 let recent=store.get('recent',[]);
@@ -284,9 +298,12 @@ const INC={0:['❔','Bilinmeyen olay'],1:['💥','Kaza'],2:['🌫️','Sis'],3:[
 
 function assess(h){
   let s=0;const why=[];
-  if(h.prec>=5){s+=3;why.push('Kuvvetli yağış')}else if(h.prec>=1){s+=2;why.push('Yağış')}else if(h.prec>0.1||h.prob>=60){s+=1;why.push('Hafif yağış / ihtimal')}
-  if([71,73,75,77,85,86].includes(h.code)){s+=3;why.push('Kar')}
-  if([56,57,66,67].includes(h.code)||(h.temp<=1&&h.prec>0)){s+=3;why.push('Buzlanma riski')}else if(h.temp<=2){s+=1;why.push('Don riski')}
+  const snowing=(h.snow!=null&&h.snow>0.05)||[71,73,75,77,85,86].includes(h.code);
+  const rain=h.rain!=null?h.rain:(snowing?0:h.prec);
+  if(snowing){if((h.snow||0)>=1||[75,86].includes(h.code)){s+=4;why.push('Yoğun kar yağışı')}else{s+=3;why.push('Kar yağışı')}}
+  if(rain>=5){s+=3;why.push('Kuvvetli yağmur')}else if(rain>=1){s+=2;why.push('Yağmur')}else if(rain>0.1||(!snowing&&h.prob>=60)){s+=1;why.push('Hafif yağmur / ihtimal')}
+  if(h.depth!=null&&h.depth>=0.05){s+=3;why.push('Kalın kar örtüsü')}else if(h.depth!=null&&h.depth>=0.01){s+=2;why.push('Kar örtüsü')}
+  if([56,57,66,67].includes(h.code)||(h.temp<=1&&rain>0.1)){s+=3;why.push('Buzlanma riski')}else if(h.temp<=2){s+=1;why.push('Don riski')}
   if([95,96,99].includes(h.code)){s+=3;why.push('Fırtına')}
   if(h.gust>=70){s+=3;why.push('Çok kuvvetli rüzgar')}else if(h.gust>=50){s+=1;why.push('Kuvvetli rüzgar')}
   if(h.vis!=null&&h.vis<1000){s+=3;why.push('Yoğun sis')}else if((h.vis!=null&&h.vis<3000)||[45,48].includes(h.code)){s+=1;why.push('Sis / pus')}
@@ -318,6 +335,7 @@ const routeLayer=L.layerGroup().addTo(map);
 const ptLayer=L.layerGroup().addTo(map);
 const labelLayer=L.layerGroup().addTo(map);
 const poiLayer=L.layerGroup();
+const incLayer=L.layerGroup().addTo(map);
 let flowLayers=null;
 
 /* ---------- Hava ızgarası (Ventusky benzeri katman) ---------- */
@@ -325,6 +343,9 @@ const SC={
   temp:{u:'°C',a:140,st:[[-20,140,40,180],[-10,40,90,210],[0,70,170,235],[10,70,200,140],[20,240,215,70],[30,245,130,40],[40,200,30,40]]},
   prec:{u:'mm/sa',st:[[0.05,120,200,255,0],[0.3,110,190,255,150],[1,40,120,250,180],[3,40,200,90,190],[7,250,215,0,200],[15,250,100,0,210],[30,215,0,90,220]]},
   wind:{u:'km/sa',a:140,st:[[0,40,60,140],[15,40,150,200],[30,60,200,120],[50,240,210,60],[70,240,110,40],[100,180,30,110]]},
+  sis:{u:'km görüş',st:[[0.2,236,238,242,225],[0.5,225,229,236,200],[1,212,218,228,165],[3,200,207,218,90],[6,200,207,218,0]]},
+  kar:{u:'cm',st:[[0.5,255,255,255,0],[2,240,245,255,130],[10,205,225,255,175],[30,150,185,250,205],[100,105,120,235,225]]},
+  snowp:{u:'mm/sa',st:[[0.05,235,190,255,0],[0.2,240,195,255,160],[1,225,130,245,190],[3,190,70,225,210],[7,140,35,195,225]]},
   cloud:{u:'%',st:[[0,255,255,255,0],[30,230,235,245,40],[70,220,225,235,120],[100,250,250,255,185]]}
 };
 function colorAt(sc,v){
@@ -359,20 +380,21 @@ async function loadGrid(){
   }
   const lats=[],lngs=[];for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){lats.push((S0+j*step).toFixed(2));lngs.push((W0+i*step).toFixed(2))}
   const my=++G.req;
-  const url=`https://api.open-meteo.com/v1/forecast?latitude=${lats.join(',')}&longitude=${lngs.join(',')}&hourly=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m,cloud_cover&forecast_hours=72&timeformat=unixtime&timezone=GMT`;
+  const url=`https://api.open-meteo.com/v1/forecast?latitude=${lats.join(',')}&longitude=${lngs.join(',')}&hourly=temperature_2m,precipitation,snowfall,snow_depth,visibility,wind_speed_10m,wind_direction_10m,cloud_cover&forecast_hours=72&timeformat=unixtime&timezone=GMT`;
   setLegend('yükleniyor…');
   try{
     let res=await getJSON(url,25000);if(my!==G.req)return;if(!Array.isArray(res))res=[res];
     const times=res[0].hourly.time,T=times.length,K=res.length;
     const mk=()=>Array.from({length:T},()=>new Float32Array(K));
-    const Lr={temp:mk(),prec:mk(),wind:mk(),cloud:mk(),u:mk(),v:mk()};
+    const Lr={temp:mk(),prec:mk(),snow:mk(),snowd:mk(),kar:mk(),sis:mk(),wind:mk(),cloud:mk(),u:mk(),v:mk()};
     res.forEach((r,k)=>{const h=r.hourly;for(let t=0;t<T;t++){
       const ws=h.wind_speed_10m[t]??0,wd=(h.wind_direction_10m[t]??0)*Math.PI/180;
-      Lr.temp[t][k]=h.temperature_2m[t]??0;Lr.prec[t][k]=h.precipitation[t]??0;Lr.wind[t][k]=ws;Lr.cloud[t][k]=h.cloud_cover[t]??0;
+      Lr.temp[t][k]=h.temperature_2m[t]??0;Lr.prec[t][k]=h.precipitation[t]??0;Lr.wind[t][k]=ws;Lr.cloud[t][k]=h.cloud_cover[t]??0;Lr.snow[t][k]=(h.snowfall&&h.snowfall[t])??0;Lr.snowd[t][k]=(h.snow_depth&&h.snow_depth[t])??0;Lr.kar[t][k]=Lr.snowd[t][k]*100;Lr.sis[t][k]=(h.visibility&&h.visibility[t]!=null)?h.visibility[t]/1000:99;
       Lr.u[t][k]=-ws*Math.sin(wd);Lr.v[t][k]=-ws*Math.cos(wd);}});
     const nowS=Date.now()/1000;let ni=times.findIndex(x=>x+3600>nowS);if(ni<0)ni=0;
     G.d={s:S0,n:N0,w:W0,e:E0,step,nx,ny,times,L:Lr,ni,at:Date.now()};
     const max=Math.max(0,T-1-ni);$('#tRange').max=max;if(G.off>max)G.off=max;
+    if(G.wantOff!=null){G.off=Math.max(0,Math.min(max,G.wantOff));G.wantOff=null}
     updTime();renderField();setLegend();
   }catch(e){log('Hava katmanı hatası:',e.message);setLegend('hava verisi alınamadı');}
 }
@@ -384,14 +406,23 @@ function renderField(){
   fieldCv.width=w;fieldCv.height=h;fieldCv.style.width=sz.x+'px';fieldCv.style.height=sz.y+'px';
   const ctx=fieldCv.getContext('2d');ctx.clearRect(0,0,w,h);
   if(S.layer==='none'||!G.d)return;
-  const arr=G.d.L[S.layer][tIdx()],scale=SC[S.layer];
+  const ti=tIdx(),arr=G.d.L[S.layer][ti],scale=SC[S.layer],isP=S.layer==='prec',SN=G.d.L.snow[ti],SD=G.d.L.snowd[ti];
   const lats=new Float64Array(h),lngs=new Float64Array(w);
   for(let y=0;y<h;y++)lats[y]=map.containerPointToLatLng([0,y*sc+sc/2]).lat;
   for(let x=0;x<w;x++)lngs[x]=map.containerPointToLatLng([x*sc+sc/2,0]).lng;
   const img=ctx.createImageData(w,h),D=img.data;
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
     const v=interp(arr,lats[y],lngs[x]);if(v==null)continue;
-    const c=colorAt(scale,v),p=(y*w+x)*4;D[p]=c[0];D[p+1]=c[1];D[p+2]=c[2];D[p+3]=c[3];
+    let c;
+    if(isP){
+      const sd=interp(SD,lats[y],lngs[x]),sn=interp(SN,lats[y],lngs[x]);
+      c=sd>0.005?[240,244,252,Math.min(175,70+sd*700)]:[0,0,0,0];
+      if(v>0.05){const cc=colorAt(sn>0&&sn/0.7>=v*0.5?SC.snowp:SC.prec,v);if(cc[3]>0)c=cc}
+    }else if(S.layer==='kar'){
+      c=colorAt(scale,v);const sn=interp(SN,lats[y],lngs[x]);
+      if(sn>0.05){const cc=colorAt(SC.snowp,sn/0.7);if(cc[3]>0)c=cc}
+    }else c=colorAt(scale,v);
+    const p=(y*w+x)*4;D[p]=c[0];D[p+1]=c[1];D[p+2]=c[2];D[p+3]=c[3];
   }
   ctx.putImageData(img,0,0);
 }
@@ -428,8 +459,9 @@ function setLegend(msg){
   if(S.layer==='none'){el.innerHTML=msg?`<span>${esc(msg)}</span>`:'';return}
   const sc=SC[S.layer],s=sc.st;
   const grad=s.map((x,i)=>`rgba(${x[1]},${x[2]},${x[3]},${Math.max(.35,(x[4]??sc.a)/255)}) ${i/(s.length-1)*100}%`).join(',');
-  const names={temp:'Sıcaklık',prec:'Yağış',wind:'Rüzgar',cloud:'Bulut'};
-  el.innerHTML=`<div class="lgl"><span>${names[S.layer]} (${sc.u})</span><span>${msg?esc(msg):''}</span></div><div class="lg" style="background:linear-gradient(90deg,${grad})"></div><div class="lgl"><span>${s[0][0]}</span><span>${s[Math.floor(s.length/2)][0]}</span><span>${s[s.length-1][0]}+</span></div>`;
+  const names={temp:'Sıcaklık',prec:'Yağış',wind:'Rüzgar',cloud:'Bulut',kar:'Kar örtüsü',sis:'Sis'};
+  const note=S.layer==='sis'?'<div class="lgl"><span>Beyaz ne kadar yoğunsa görüş o kadar düşük</span></div>':S.layer==='kar'?'<div class="lgl"><span>⚪→🔵 kar kalınlığı</span><span>🟣 kar yağışı</span></div>':S.layer==='prec'?'<div class="lgl"><span>🔵 yağmur</span><span>🟣 kar yağışı</span><span>⚪ kar örtüsü</span></div>':'';
+  el.innerHTML=note+`<div class="lgl"><span>${names[S.layer]} (${sc.u})${G.auto?' • otomatik':''}</span><span>${msg?esc(msg):''}</span></div><div class="lg" style="background:linear-gradient(90deg,${grad})"></div><div class="lgl"><span>${s[0][0]}</span><span>${s[Math.floor(s.length/2)][0]}</span><span>${s[s.length-1][0]}+</span></div>`;
 }
 function tLabel(ts){
   const d=new Date(ts*1000),n=new Date(),tm=new Date(n.getTime()+864e5);
@@ -443,20 +475,38 @@ $('#tPlay').onclick=()=>{
   $('#tPlay').textContent='⏸';
   G.play=setInterval(()=>{const max=+$('#tRange').max;G.off=G.off>=max?0:G.off+1;updTime();renderField()},700);
 };
-function setLayer(l){S.layer=l;saveS();$$('#chips [data-l]').forEach(b=>b.classList.toggle('on',b.dataset.l===l));setLegend();renderField()}
-$$('#chips [data-l]').forEach(b=>b.onclick=()=>setLayer(b.dataset.l));
+function setLayer(l,auto){if(!auto)S.userLayer=l;G.auto=!!auto;S.layer=l;saveS();$$('#chips [data-l]').forEach(b=>b.classList.toggle('on',b.dataset.l===l));setLegend();renderField()}
+$$('#chips [data-l]').forEach(b=>b.onclick=()=>{G.manual=true;setLayer(b.dataset.l);updAutoChip()});
+function updAutoChip(){$('#chAuto').classList.toggle('on',S.autoWx&&!G.manual)}
+$('#chAuto').onclick=()=>{
+  if(S.autoWx&&!G.manual){S.autoWx=false;saveS();if(G.auto)setLayer(S.userLayer||'temp');toast('Otomatik hava katmanı kapalı')}
+  else{S.autoWx=true;G.manual=false;saveS();toast('Otomatik: yolda yağmur, kar veya yoğun sis varsa kendiliğinden gösterilir');if(st.last)applyAutoWx(st.last,D.on?st.last.rt.cumD[D.idx]:0,!D.on)}
+  updAutoChip();
+};
+function wetAhead(R,from,to){return R.pts.some(p=>p.h&&p.d>=from&&p.d<=to&&((p.h.prec||0)>0.1||(p.h.snow||0)>0.05||(p.h.depth||0)>=0.01))}
+function applyAutoWx(R,here,fromReport){
+  if(!S.autoWx||G.manual||!R)return;
+  const wet=fromReport?wetAhead(R,0,1e12):wetAhead(R,here-2000,here+60000);
+  if(fromReport){const off=Math.round((new Date(R.depart).getTime()-Date.now())/3600e3);if(G.d)G.off=Math.max(0,Math.min(+$('#tRange').max,off));else G.wantOff=Math.max(0,off);updTime()}
+  else if(G.off!==0){G.off=0;updTime()}
+  const fog=!wet&&R.pts.some(p=>p.h&&p.h.vis!=null&&p.h.vis<1000&&(fromReport||(p.d>=here-2000&&p.d<=here+60000)));
+  const want=wet?'prec':fog?'sis':null;
+  if(want&&S.layer!==want)setLayer(want,true);
+  else if(!want&&G.auto)setLayer(S.userLayer||'temp');
+  else renderField();
+}
 $('#chPart').onclick=()=>{S.particles=!S.particles;saveS();$('#chPart').classList.toggle('on',S.particles);partCv.style.opacity=S.particles?1:0;if(!S.particles&&P.ctx)P.ctx.clearRect(0,0,partCv.width,partCv.height)};
 $('#chTraffic').onclick=()=>{
   if(flowLayers){flowLayers.forEach(l=>map.removeLayer(l));flowLayers=null;$('#chTraffic').classList.remove('on');return}
-  if(!S.key){toast('Trafik katmanı için Ayarlar → TomTom anahtarı ekle');setTab('set');return}
-  const k=encodeURIComponent(S.key);
+  if(!ttKey()){toast('Trafik katmanı için Ayarlar → TomTom anahtarı ekle');setTab('set');return}
+  const k=encodeURIComponent(ttKey());
   flowLayers=[
     L.tileLayer(`https://api.tomtom.com/traffic/map/4/tile/flow/relative0/{z}/{x}/{y}.png?key=${k}`,{maxZoom:22,opacity:.85,zIndex:5}),
     L.tileLayer(`https://api.tomtom.com/traffic/map/4/tile/incidents/s3/{z}/{x}/{y}.png?key=${k}`,{maxZoom:22,zIndex:6})
   ];
   flowLayers.forEach(l=>l.addTo(map));$('#chTraffic').classList.add('on');
 };
-$('#chLoc').onclick=()=>locate().then(p=>map.setView([p.lat,p.lon],12)).catch(e=>toast('Konum alınamadı: '+e.message));
+$('#chLoc').onclick=()=>{if(LOC.last){map.setView(LOC.last,Math.max(map.getZoom(),14));return}locate().then(p=>{map.setView([p.lat,p.lon],14);startLoc()}).catch(e=>toast('Konum alınamadı: '+e.message))};
 
 /* ---------- Haritaya dokununca ---------- */
 map.on('click',e=>{
@@ -523,9 +573,10 @@ function drawPts(){
   if(st.from)L.circleMarker([st.from.lat,st.from.lon],{radius:8,color:'#141a22',weight:3,fillColor:'#2fbf6b',fillOpacity:1}).addTo(ptLayer);
   if(st.to)L.circleMarker([st.to.lat,st.to.lon],{radius:8,color:'#141a22',weight:3,fillColor:'#ff4057',fillOpacity:1}).addTo(ptLayer);
 }
-$('#btnGps').onclick=async()=>{try{const g=await locate();choose('from',{name:'Konumum',lat:g.lat,lon:g.lon},true);map.setView([g.lat,g.lon],11)}catch(e){toast('Konum alınamadı: '+e.message)}};
+$('#btnGps').onclick=async()=>{try{const g=await locate();startLoc();choose('from',{name:'Konumum',lat:g.lat,lon:g.lon},true);map.setView([g.lat,g.lon],11)}catch(e){toast('Konum alınamadı: '+e.message)}};
 $('#btnSwap').onclick=()=>{[st.from,st.to]=[st.to,st.from];const a=$('#inFrom').value;$('#inFrom').value=$('#inTo').value;$('#inTo').value=a;drawPts()};
 $('#btnEdit').onclick=()=>$('#top').classList.remove('compact');
+$('#btnStart').onclick=()=>startDrive();
 $('#btnGo').onclick=()=>go();
 
 async function go(){
@@ -563,18 +614,18 @@ function samplePoints(rt){
   return pts;
 }
 async function routeWeather(pts){
-  const url=`https://api.open-meteo.com/v1/forecast?latitude=${pts.map(p=>p.lat.toFixed(3)).join(',')}&longitude=${pts.map(p=>p.lon.toFixed(3)).join(',')}&hourly=temperature_2m,precipitation,precipitation_probability,weather_code,wind_speed_10m,wind_gusts_10m,visibility&timeformat=unixtime&forecast_days=16&timezone=GMT`;
+  const url=`https://api.open-meteo.com/v1/forecast?latitude=${pts.map(p=>p.lat.toFixed(3)).join(',')}&longitude=${pts.map(p=>p.lon.toFixed(3)).join(',')}&hourly=temperature_2m,precipitation,rain,snowfall,snow_depth,precipitation_probability,weather_code,wind_speed_10m,wind_gusts_10m,visibility&timeformat=unixtime&forecast_days=16&timezone=GMT`;
   const d=await getJSON(url,25000);return Array.isArray(d)?d:[d];
 }
 function wxAt(w,ts){
   const H=w&&w.hourly;if(!H||!H.time||!H.time.length)return null;
   const i=Math.round((ts-H.time[0])/3600);if(i<0||i>=H.time.length||H.temperature_2m[i]==null)return null;
-  return{temp:H.temperature_2m[i],prec:H.precipitation[i]??0,prob:H.precipitation_probability?.[i],code:H.weather_code[i],wind:H.wind_speed_10m[i]??0,gust:H.wind_gusts_10m?.[i],vis:H.visibility?.[i]};
+  return{temp:H.temperature_2m[i],prec:H.precipitation[i]??0,prob:H.precipitation_probability?.[i],code:H.weather_code[i],wind:H.wind_speed_10m[i]??0,gust:H.wind_gusts_10m?.[i],vis:H.visibility?.[i],rain:H.rain?.[i],snow:H.snowfall?.[i],depth:H.snow_depth?.[i]};
 }
 
 const INC_FIELDS='{incidents{type,geometry{type,coordinates},properties{id,iconCategory,magnitudeOfDelay,events{description,code,iconCategory},startTime,endTime,from,to,length,delay,roadNumbers}}}';
 async function ttIncidents(bbox,future){
-  const q=`key=${encodeURIComponent(S.key.replace(/\s+/g,''))}&bbox=${bbox.map(v=>v.toFixed(4)).join(',')}&fields=${encodeURIComponent(INC_FIELDS)}&timeValidityFilter=${future?'present,future':'present'}`;
+  const q=`key=${encodeURIComponent(ttKey())}&bbox=${bbox.map(v=>v.toFixed(4)).join(',')}&fields=${encodeURIComponent(INC_FIELDS)}&timeValidityFilter=${future?'present,future':'present'}`;
   const classic=`https://api.tomtom.com/traffic/services/5/incidentDetails?${q}`;
   const orbis=`https://api.tomtom.com/maps/orbis/traffic/incidentDetails?apiVersion=1&${q}`;
   const tryUrl=async u=>{try{return await getJSON(u+'&language=tr-TR')}catch(e){if(/^400/.test(e.message))return await getJSON(u+'&language=en-GB');throw e}};
@@ -588,7 +639,7 @@ async function ttIncidents(bbox,future){
   }
 }
 async function routeIncidents(rt,depart){
-  if(!S.key)return{reason:'nokey',list:[]};
+  if(!ttKey())return{reason:'nokey',list:[]};
   const C=rt.coords,D=rt.cumD,boxes=[];let s=0;
   for(let i=1;i<C.length;i++){
     if(D[i]-D[s]>=50000||i===C.length-1){
@@ -609,6 +660,7 @@ async function routeIncidents(rt,depart){
     const stp=Math.max(1,Math.floor(cs.length/8));let best=1e12,bi=0,bp=null;
     for(let q=0;q<cs.length;q+=stp){const pt=[cs[q][1],cs[q][0]];for(const ri of ref){const dd=distM(pt,C[ri]);if(dd<best){best=dd;bi=ri;bp=pt}}}
     if(best>500)continue;
+    if((pr.iconCategory??0)===6&&(pr.magnitudeOfDelay??0)<3)continue;
     const cat=pr.iconCategory??0,ev=(pr.events||[])[0]||{};
     const end=pr.endTime?new Date(pr.endTime):null;
     list.push({id,cat,title:(INC[cat]||INC[0])[1],lat:bp[0],lon:bp[1],d:D[bi],t:rt.cumT[bi],
@@ -618,7 +670,7 @@ async function routeIncidents(rt,depart){
 }
 function summarize(pts){
   let lvl=0;const m=new Map();
-  pts.forEach(p=>{if(!p.a)return;lvl=Math.max(lvl,p.a.lvl);p.a.why.forEach(w=>{const e=m.get(w)||{w,k0:p.d,k1:p.d,t0:p.t,t1:p.t};e.k1=p.d;e.t1=p.t;m.set(w,e)})});
+  pts.forEach(p=>{if(!p.a)return;lvl=Math.max(lvl,p.a.lvl);p.a.why.forEach(w=>{const e=m.get(w)||{w,k0:p.d,k1:p.d,t0:p.t,t1:p.t,p0:[p.lat,p.lon]};e.k1=p.d;e.t1=p.t;e.p1=[p.lat,p.lon];m.set(w,e)})});
   return{lvl,items:[...m.values()]};
 }
 function bestDepartures(pts,wx,depart){
@@ -655,7 +707,8 @@ async function runAnalysis(from,to,dep,tripId){
     const R=await analyze(from,to,dep);R.tripId=tripId;st.last=R;
     $('#topSumTx').textContent=`${shortN(from.name)} → ${shortN(to.name)} • ${fmtDay(dep)} ${fmtTime(dep)}`;$('#top').classList.add('compact');
     D.idx=0;D.si=0;D.spoken=new Set();D.off=0;D.arrived=false;drawRoute(R);renderReport(R);if(tripId){saveSummary(tripId,R);renderTrips()}
-    loadPois(R);
+    loadPois(R);nameItems(R);
+    G.manual=false;updAutoChip();applyAutoWx(R,0,!D.on);
   }catch(e){
     log('Analiz hatası:',e.message);
     $('#t-route').innerHTML=`<div class="err" style="padding:14px 0">Hesaplanamadı: ${esc(e.message)}</div><div class="mut sm">İnternet bağlantını kontrol et; sorun sürerse Ayarlar → Sistem testi'ni çalıştır.</div><div class="acts"><button class="btn pri" id="btnRetry">Tekrar dene</button></div>`;
@@ -674,13 +727,21 @@ function drawRoute(R){
   st.marks=P.filter(p=>p.h).map(p=>{const w=wmo(p.h.code);
     return L.marker([p.lat,p.lon],{interactive:false,icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="wxm">${w[0]} ${Math.round(p.h.temp)}°<small>${fmtTime(new Date(dep.getTime()+p.t*1000))}</small></div>`})})});
   declutter();
-  ((R.inc&&R.inc.list)||[]).forEach(i=>L.marker([i.lat,i.lon],{icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="incm">${(INC[i.cat]||INC[0])[0]}</div>`})}).bindPopup(`<b>${esc(i.title)}</b><br>${esc(i.desc)}`).addTo(routeLayer));
+  st.incMarks=((R.inc&&R.inc.list)||[]).map(i=>L.marker([i.lat,i.lon],{icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="incm">${(INC[i.cat]||INC[0])[0]}</div>`})}).bindPopup(`<b>${esc(i.title)}</b><br>${esc(i.desc)}`));
+  st.poiMarks=[];poiLayer.clearLayers();declutter();
   fitRoute(R);
+}
+function placeSpread(list,layer,minPx,taken){
+  layer.clearLayers();
+  (list||[]).forEach(m=>{const p=map.latLngToContainerPoint(m.getLatLng());if(taken.every(q=>p.distanceTo(q)>=minPx)){m.addTo(layer);taken.push(p)}});
 }
 function declutter(){
   labelLayer.clearLayers();const M=st.marks||[];let last=null;
-  M.forEach((m,i)=>{const p=map.latLngToContainerPoint(m.getLatLng());
+  M.forEach(m=>{const p=map.latLngToContainerPoint(m.getLatLng());
     if(!last||p.distanceTo(last)>=85){m.addTo(labelLayer);last=p}});
+  const taken=[];
+  placeSpread(st.incMarks,incLayer,40,taken);
+  placeSpread(st.poiMarks,poiLayer,38,taken);
 }
 map.on('zoomend',declutter);
 function fitRoute(R){
@@ -694,12 +755,13 @@ function renderReport(R){
   const trip=R.tripId?trips.find(t=>t.id===R.tripId):null;
   let h=`<div class="sum" style="--c:${LVL[lvl].c}"><div class="sumh"><span class="badge">${LVL[lvl].t}</span>${trip?`<span class="mut sm">${esc(trip.name)}</span>`:''}</div>
     <div class="rt">${esc(shortN(R.from.name))} → ${esc(shortN(R.to.name))}</div>
-    <div class="mut sm">${fmtKm(R.rt.distance)}, ${fmtDur(R.rt.duration)} • ${fmtDay(dep)} ${fmtTime(dep)} çıkış, ${fmtTime(arr)} varış</div></div>`;
+    <div class="mut sm">${fmtKm(R.rt.distance)}, ${fmtDur(R.rt.duration)} • ${fmtDay(dep)} ${fmtTime(dep)} çıkış, ${fmtTime(arr)} varış</div></div>
+    <div class="acts"><button class="btn pri" id="btnDrive" style="flex:1;font-size:18px;padding:12px">▶ Yola çık</button></div>`;
   h+='<h4>Hava, geçeceğin saatte</h4>';
   if(!R.wxOk)h+='<div class="err">Hava verisi alınamadı.</div>';
   else if(R.pts.every(p=>!p.h))h+='<div class="mut">Bu tarih tahmin aralığının dışında (en fazla 16 gün ileri).</div>';
   else if(!R.overall.items.length)h+='<div class="ok">Güzergah boyunca önemli bir hava riski yok.</div>';
-  else h+=R.overall.items.map(it=>`<div class="wi">⚠️ <b>${esc(it.w)}</b> <span class="mut sm">${Math.round(it.k0/1000)}–${Math.round(it.k1/1000)}. km, ${at(it.t0)}–${at(it.t1)}</span></div>`).join('');
+  else h+=R.overall.items.map((it,j)=>`<div class="wi">${/kar/i.test(it.w)?'❄️':/yağmur/i.test(it.w)?'🌧️':'⚠️'} <b>${esc(it.w)}</b> <span class="wpl" data-j="${j}"></span> <span class="mut sm">${Math.round(it.k0/1000)}–${Math.round(it.k1/1000)}. km, ${at(it.t0)}–${at(it.t1)}</span></div>`).join('');
   h+='<h4>Kaza ve yol çalışması</h4>';
   if(inc.reason==='nokey')h+='<div class="mut sm">Bu bölüm için ücretsiz TomTom anahtarı gerekiyor. <button class="lnk" data-go="set">Anahtar ekle</button></div>';
   else if(inc.reason==='err')h+=`<div class="err sm">Trafik verisi alınamadı: ${esc(inc.msg)}</div>`;
@@ -714,15 +776,17 @@ function renderReport(R){
       return `<div class="tr" style="--c:${LVL[p.a.lvl].c}"><span class="tt">${at(p.t)}</span><span class="tk">${Math.round(p.d/1000)} km</span><span title="${esc(w[1])}">${w[0]} ${Math.round(p.h.temp)}°</span><span>${p.h.prec>0.05?p.h.prec.toFixed(1)+' mm':'kuru'}</span><span>${Math.round(p.h.wind)} km/sa</span></div>`}).join('')+'</div>';
   }
   h+='<h4>Yol üstü benzinlik ve şarj</h4><div id="poiBox" class="mut sm">Yükleniyor…</div>';
-  h+=`<div class="acts"><button class="btn pri" id="btnDrive">▶ Yola çık</button>${R.tripId?'':'<button class="btn" id="btnSaveTrip">Seyahat olarak kaydet</button>'}<button class="btn" id="btnFit">Rotayı göster</button><button class="btn" id="btnRe">Yenile</button></div>
-    <div class="mut sm">Hesaplandı ${new Date(R.at).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}. Hava: Open-Meteo, rota: OSRM${S.key?', olaylar: TomTom':''}.</div>`;
+  h+=`<div class="acts">${R.tripId?'':'<button class="btn pri" id="btnSaveTrip">Seyahat olarak kaydet</button>'}<button class="btn" id="btnFit">Rotayı göster</button><button class="btn" id="btnRe">Yenile</button></div>
+    <div class="acts"><button class="btn sm" id="btnFbRep">💬 Bu rapor hakkında geri bildirim</button></div>
+    <div class="mut sm">Hesaplandı ${new Date(R.at).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}. Hava: Open-Meteo, rota: OSRM${ttKey()?', olaylar: TomTom':''}.</div>`;
   $('#t-route').innerHTML=h;
 }
 $('#t-route').addEventListener('click',e=>{
   const t=e.target,R=st.last;
   if(t.closest('[data-go]'))return setTab(t.closest('[data-go]').dataset.go);
   if(!R)return;
-  if(t.closest('#btnDrive'))startDrive();
+  if(t.closest('#btnFbRep'))openFeedback('Rapor: '+shortN(R.from.name)+' → '+shortN(R.to.name));
+  else if(t.closest('#btnDrive'))startDrive();
   else if(t.closest('#poiMore')){R.poiAll=true;renderPoiBox(R)}
   else if(t.closest('.pl[data-lat]')){const d=t.closest('.pl');sheet('min');map.setView([+d.dataset.lat,+d.dataset.lon],15)}
   else if(t.closest('#btnSaveTrip'))openTripModal();
@@ -819,7 +883,7 @@ $$('#tabs button').forEach(b=>b.onclick=()=>setTab(b.dataset.t));
 })();
 
 /* ---------- Ayarlar, test, yedek ---------- */
-$('#inKey').value=S.key;
+$('#inKey').value=S.key;if(DEFAULT_TT&&!S.key)$('#inKey').placeholder='Ortak anahtar kullanılıyor (isteğe bağlı kendi anahtarın)';
 $('#btnKey').onclick=()=>{S.key=$('#inKey').value.replace(/\s+/g,'');$('#inKey').value=S.key;S.ttMode='';saveS();toast(S.key?'Anahtar kaydedildi':'Anahtar silindi')};
 $$('[data-style]').forEach(b=>b.onclick=()=>setStyle(b.dataset.style));
 $('#inOp').value=S.wxOp;$('#opVal').textContent=Math.round(S.wxOp*100)+'%';
@@ -841,7 +905,7 @@ $('#btnTest').onclick=async()=>{
   await T('Adres arama',async()=>{const r=await geocode('Mersin');if(!r.length)throw new Error('sonuç yok');return r[0].name});
   await T('Rota',async()=>{const r=await getRoute({lat:36.80,lon:34.63},{lat:37.00,lon:35.32});return`Mersin–Adana ${fmtKm(r.distance)}, ${fmtDur(r.duration)}`});
   await T('Hava',async()=>{const d=await getJSON('https://api.open-meteo.com/v1/forecast?latitude=36.8&longitude=34.63&current=temperature_2m');return`Mersin şu an ${d.current.temperature_2m}°C`});
-  await T('Kaza / yol çalışması',async()=>{if(!S.key)throw new Error('TomTom anahtarı girilmemiş');let d;try{d=await ttIncidents([34.5,36.7,35.4,37.1],false)}catch(e){throw new Error(/40[13]/.test(e.message)?`TomTom anahtarı tanımadı. Girilen anahtar ${S.key.length} karakter, ilk 4: ${S.key.slice(0,4)}… (doğru anahtar genelde 32 karakter)`:e.message)}return`Mersin–Adana bölgesinde ${(d.incidents||[]).length} olay (${S.ttMode==='orbis'?'Orbis':'klasik'} servis, anahtar ${S.key.length} karakter)`});
+  await T('Kaza / yol çalışması',async()=>{if(!ttKey())throw new Error('TomTom anahtarı girilmemiş');let d;try{d=await ttIncidents([34.5,36.7,35.4,37.1],false)}catch(e){throw new Error(/40[13]/.test(e.message)?`TomTom anahtarı tanımadı. Girilen anahtar ${ttKey().length} karakter, ilk 4: ${ttKey().slice(0,4)}… (doğru anahtar genelde 32 karakter)`:e.message)}return`Mersin–Adana bölgesinde ${(d.incidents||[]).length} olay (${S.ttMode==='orbis'?'Orbis':'klasik'} servis, anahtar ${ttKey().length} karakter)`});
   await T('Konum',async()=>{const p=await locate();return p.lat.toFixed(3)+', '+p.lon.toFixed(3)});
   await T('Çevrimdışı açılış',async()=>{if(!('serviceWorker' in navigator))throw new Error('tarayıcı desteklemiyor');const r=await navigator.serviceWorker.getRegistration();if(!r)throw new Error('kayıtlı değil');return'hazır'});
   await T('Sesli komut',async()=>{if(!('speechSynthesis' in window))throw new Error('tarayıcı desteklemiyor');pickVoice();return trVoice?'Türkçe ses var ('+trVoice.name+')':'Türkçe ses yok, Ayarlar\'daki açıklamaya bak'});
@@ -851,6 +915,69 @@ $('#btnTest').onclick=async()=>{
 function posChips(){const el=document.body.classList.contains('driving')?$('#hud'):$('#top');document.documentElement.style.setProperty('--chipsTop',(el.getBoundingClientRect().bottom+10)+'px')}
 if(window.ResizeObserver){const ro=new ResizeObserver(posChips);ro.observe($('#top'));ro.observe($('#hud'))}
 window.addEventListener('resize',posChips);
+
+
+/* ---------- Geri bildirim (WhatsApp) ---------- */
+function deviceInfo(){
+  const ua=navigator.userAgent,an=ua.match(/Android ([\d.]+)(?:; ([^;)]+))?/),ios=ua.match(/OS (\d+[_\d]*) like Mac/),ch=ua.match(/Chrome\/(\d+)/);
+  const os=an?`Android ${an[1]}${an[2]&&an[2]!=='K'?' ('+an[2].trim()+')':''}`:ios?`iOS ${ios[1].replace(/_/g,'.')}`:'Diğer';
+  const mode=matchMedia('(display-mode: standalone)').matches?'ana ekran':'tarayıcı';
+  return `${os} • ${ch?'Chrome '+ch[1]:'tarayıcı'} • ${mode} • ekran ${screen.width}×${screen.height}`;
+}
+function openFeedback(context){
+  const f={stars:0,type:''};
+  const m=$('#modal');
+  m.innerHTML=`<div class="mbox"><h3>Geri bildirim</h3>
+    <div class="mut sm">Uygulamayı nasıl buldun?</div>
+    <div class="stars">${[1,2,3,4,5].map(i=>`<button type="button" data-s="${i}" aria-label="${i} yıldız">★</button>`).join('')}</div>
+    <div class="mut sm">Ne hakkında?</div>
+    <div class="days pick" id="fbType"><button type="button" data-t="🐞 Hata">🐞 Hata</button><button type="button" data-t="💡 Öneri">💡 Öneri</button><button type="button" data-t="👍 Beğendim">👍 Beğendim</button></div>
+    <label>Açıklama<textarea id="fbText" placeholder="Ne oldu, ne bekliyordun? Hangi güzergahta?"></textarea></label>
+    <label class="sm" style="display:flex;gap:8px;align-items:center;color:var(--tx)"><input type="checkbox" id="fbTech" checked style="width:auto;display:inline;margin:0"> Teknik bilgileri ekle (sürüm, telefon, son hatalar)</label>
+    <div class="acts"><button class="btn" id="fbCancel">Vazgeç</button><button class="btn pri" id="fbSend" style="flex:1">WhatsApp ile gönder</button></div>
+    <p class="mut sm">WhatsApp açılınca mesajı göndereceğin kişiyi seç. Konum bilgin gönderilmez.</p></div>`;
+  m.hidden=false;m.onclick=e=>{if(e.target===m)m.hidden=true};
+  m.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{f.stars=+b.dataset.s;m.querySelectorAll('[data-s]').forEach(x=>x.classList.toggle('on',+x.dataset.s<=f.stars))});
+  m.querySelectorAll('#fbType button').forEach(b=>b.onclick=()=>{f.type=b.dataset.t;m.querySelectorAll('#fbType button').forEach(x=>x.classList.toggle('on',x===b))});
+  $('#fbCancel').onclick=()=>m.hidden=true;
+  $('#fbSend').onclick=()=>{
+    const txt=$('#fbText').value.trim();
+    if(!f.stars&&!f.type&&!txt){toast('Bir puan, tür ya da açıklama ekle');return}
+    let msg=`🚗 YolHava geri bildirimi\n${f.stars?'★'.repeat(f.stars)+'☆'.repeat(5-f.stars)+` (${f.stars}/5)`:''}${f.type?'  '+f.type:''}\n${context?'📍 '+context+'\n':''}\n${txt||'(açıklama yok)'}`;
+    if($('#fbTech').checked){
+      const errs=LOG.filter(l=>/HATA|hata|❌/.test(l)).slice(-5);
+      msg+=`\n\n— Teknik —\nSürüm ${VERSION} • ${deviceInfo()}\nKatman: ${S.layer}${S.autoWx?' (oto)':''} • Ses: ${S.voice?'açık':'kapalı'} • TomTom: ${ttKey()?'var':'yok'}`;
+      if(st.last)msg+=`\nSon rota: ${shortN(st.last.from.name)} → ${shortN(st.last.to.name)}, ${fmtKm(st.last.rt.distance)}`;
+      if(errs.length)msg+=`\nSon hatalar:\n${errs.join('\n').slice(0,700)}`;
+    }
+    window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+    m.hidden=true;toast('Teşekkürler! WhatsApp açılıyor…');
+  };
+}
+$('#btnFeedback').onclick=()=>openFeedback('');
+
+/* ---------- Uyarı bölgelerine yer adı ---------- */
+const placeCache=new Map();let placeQ=Promise.resolve();
+function placeName(ll){
+  const k=ll[0].toFixed(2)+','+ll[1].toFixed(2);if(placeCache.has(k))return Promise.resolve(placeCache.get(k));
+  placeQ=placeQ.then(async()=>{
+    if(placeCache.has(k))return placeCache.get(k);
+    try{const r=await getJSON(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${ll[0]}&lon=${ll[1]}&zoom=10&accept-language=tr`);
+      const a=r.address||{};const n=a.town||a.city_district||a.county||a.city||a.village||a.municipality||a.province||(r.display_name||'').split(',')[0];placeCache.set(k,n||'');}
+    catch(e){placeCache.set(k,'')}
+    await new Promise(z=>setTimeout(z,1100));return placeCache.get(k);
+  });
+  return placeQ;
+}
+async function nameItems(R){
+  for(const [j,it] of R.overall.items.entries()){
+    if(!it.p0)continue;
+    it.n0=await placeName(it.p0);it.n1=it.p1?await placeName(it.p1):it.n0;
+    if(st.last!==R)return;
+    const el=document.querySelector(`.wpl[data-j="${j}"]`);
+    if(el&&(it.n0||it.n1))el.textContent=it.n0&&it.n1&&it.n0!==it.n1?`${it.n0} – ${it.n1}`:(it.n0||it.n1);
+  }
+}
 
 /* ---------- Yol üstü benzinlik / şarj (OpenStreetMap - Overpass) ---------- */
 function routeRef(rt){
@@ -863,7 +990,7 @@ async function fetchPois(rt){
   const C=rt.coords,Dd=rt.cumD,step=Math.max(1500,rt.distance/180),pts=[];let next=0;
   for(let i=0;i<C.length;i++)if(Dd[i]>=next||i===C.length-1){pts.push(C[i]);next=Dd[i]+step}
   const line=pts.map(p=>p[0].toFixed(4)+','+p[1].toFixed(4)).join(',');
-  const q=`[out:json][timeout:40];(nwr["amenity"="fuel"](around:700,${line});nwr["amenity"="charging_station"](around:700,${line}););out center tags 500;`;
+  const q=`[out:json][timeout:40];(nwr["amenity"="fuel"](around:250,${line});nwr["amenity"="charging_station"](around:250,${line}););out center tags 500;`;
   const c=new AbortController();const tm=setTimeout(()=>c.abort(),45000);
   let r;try{r=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:c.signal})}finally{clearTimeout(tm)}
   if(!r.ok)throw new Error('istasyon servisi '+r.status);
@@ -882,12 +1009,11 @@ async function loadPois(R){
   drawPois(R);renderPoiBox(R);
 }
 function drawPois(R){
-  poiLayer.clearLayers();
-  (R.pois||[]).forEach(p=>L.marker([p.lat,p.lon],{icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="poi${p.ev?' ev':''}">${p.ev?'🔌':'⛽'}</div>`})})
-    .bindPopup(`<b>${esc(p.name)}</b><br>${Math.round(p.d/1000)}. km${p.extra?'<br>'+esc(p.extra):''}`).addTo(poiLayer));
-  updPoiVis();
+  st.poiMarks=(R.pois||[]).slice().sort((a,b)=>b.ev-a.ev).map(p=>L.marker([p.lat,p.lon],{icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="poi${p.ev?' ev':''}">${p.ev?'🔌':'⛽'}</div>`})})
+    .bindPopup(`<b>${esc(p.name)}</b><br>${Math.round(p.d/1000)}. km${p.extra?'<br>'+esc(p.extra):''}`));
+  declutter();updPoiVis();
 }
-function updPoiVis(){const on=S.poi&&map.getZoom()>=10;if(on&&!map.hasLayer(poiLayer))poiLayer.addTo(map);if(!on&&map.hasLayer(poiLayer))map.removeLayer(poiLayer);$('#chPoi').classList.toggle('on',S.poi)}
+function updPoiVis(){const on=S.poi&&map.getZoom()>=12;if(on&&!map.hasLayer(poiLayer))poiLayer.addTo(map);if(!on&&map.hasLayer(poiLayer))map.removeLayer(poiLayer);$('#chPoi').classList.toggle('on',S.poi)}
 map.on('zoomend',updPoiVis);
 $('#chPoi').onclick=()=>{S.poi=!S.poi;saveS();updPoiVis();toast(S.poi?'İstasyonlar yakınlaştırınca görünür':'İstasyonlar gizlendi')};
 function renderPoiBox(R){
@@ -896,7 +1022,7 @@ function renderPoiBox(R){
   const f=R.pois.filter(p=>!p.ev).length,e=R.pois.filter(p=>p.ev).length;
   if(!R.pois.length){el.textContent='Rota üzerinde kayıtlı istasyon bulunamadı.';return}
   const list=R.poiAll?R.pois:R.pois.slice(0,10);
-  el.innerHTML=`<div style="color:var(--tx);margin-bottom:4px">⛽ ${f} akaryakıt, 🔌 ${e} şarj istasyonu (rotaya 700 m içinde)</div>`+
+  el.innerHTML=`<div style="color:var(--tx);margin-bottom:4px">⛽ ${f} akaryakıt, 🔌 ${e} şarj istasyonu (rotanın hemen kenarında)</div>`+
     list.map(p=>`<div class="pl" data-lat="${p.lat}" data-lon="${p.lon}"><span class="k">${Math.round(p.d/1000)}. km</span><span>${p.ev?'🔌':'⛽'} <b style="color:var(--tx)">${esc(p.name)}</b>${p.extra?'<br>'+esc(p.extra):''}</span></div>`).join('')+
     (!R.poiAll&&R.pois.length>10?`<div class="acts"><button class="btn sm" id="poiMore">Tümünü göster (${R.pois.length})</button></div>`:'');
 }
@@ -955,7 +1081,7 @@ function voiceNav(R,here,kmh){
     if(dist<=far&&dist>near*2&&!D.spoken.has('F'+D.si)){D.spoken.add('F'+D.si);say(`${spk(dist)} sonra ${low(s0.text)}`)}
     if(dist<=near&&!D.spoken.has('N'+D.si)){D.spoken.add('N'+D.si);D.spoken.add('F'+D.si);say(`Şimdi ${low(s0.text)}`,true)}
   }else $('#hudTurn').innerHTML='';
-  const hz=[...R.overall.items.map(it=>({id:'w'+it.w,d:it.k0,txt:it.w+' bölgesi'})),
+  const hz=[...R.overall.items.map(it=>({id:'w'+it.w,d:it.k0,txt:(it.n0?it.n0+' civarında ':'')+low(it.w)+' bölgesi başlıyor'})),
             ...((R.inc&&R.inc.list)||[]).map(i=>({id:'i'+i.id,d:i.d,txt:(INC[i.cat]||INC[0])[1].toLocaleLowerCase('tr')}))];
   for(const h of hz){const g=h.d-here;if(g<0)continue;
     for(const thr of [3000,1000])if(g<=thr&&g>thr-700&&!D.spoken.has(h.id+thr)){D.spoken.add(h.id+thr);say(`Dikkat, ${spk(g)} sonra ${low(h.txt)}`)}}
@@ -972,20 +1098,40 @@ $('#btnVoiceTest').onclick=()=>{if(!('speechSynthesis' in window)){toast('Bu tar
   const v=S.voice;S.voice=true;say('500 metre sonra sağa dönün. Dikkat, 3 kilometre sonra yağış bölgesi.',true);S.voice=v;
   toast(trVoice?'Türkçe ses: '+trVoice.name:'Türkçe ses bulunamadı, varsayılan ses kullanılıyor',5000)};
 
+
+/* ---------- Sürekli konum noktası ---------- */
+const LOC={watch:null,pos:null,last:null,prev:null,hd:null,mk:null,circ:null};
+function startLoc(){
+  if(LOC.watch!=null||!navigator.geolocation)return;
+  LOC.watch=navigator.geolocation.watchPosition(onLoc,e=>log('Konum takibi:',e.message),{enableHighAccuracy:true,maximumAge:3000,timeout:30000});
+}
+function onLoc(p){
+  const ll=[p.coords.latitude,p.coords.longitude];LOC.pos=p;
+  let hd=p.coords.heading;if((hd==null||isNaN(hd))&&LOC.prev&&distM(LOC.prev,ll)>8)hd=bearing(LOC.prev,ll);
+  if(hd!=null&&!isNaN(hd))LOC.hd=hd;
+  if(!LOC.prev||distM(LOC.prev,ll)>8)LOC.prev=ll;LOC.last=ll;
+  const html=LOC.hd!=null
+    ?`<div class="me"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="#2b7cff" stroke="#fff" stroke-width="3"/><path d="M18 7 L25 26 L18 21 L11 26 Z" fill="#fff" transform="rotate(${Math.round(LOC.hd)} 18 18)"/></svg></div>`
+    :`<div class="me"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="10" fill="#2b7cff" stroke="#fff" stroke-width="3"/></svg></div>`;
+  const icon=L.divIcon({className:'',iconSize:[0,0],html}),acc=p.coords.accuracy||0;
+  if(!LOC.mk)LOC.mk=L.marker(ll,{interactive:false,zIndexOffset:1000,icon}).addTo(map);else{LOC.mk.setLatLng(ll);LOC.mk.setIcon(icon)}
+  if(acc&&acc<2000){if(!LOC.circ)LOC.circ=L.circle(ll,{radius:acc,color:'#2b7cff',weight:1,fillOpacity:.12,interactive:false}).addTo(map);else{LOC.circ.setLatLng(ll);LOC.circ.setRadius(acc)}}
+  if(D.on)onPos(p);
+}
+
 /* ---------- Sürüş modu ---------- */
 const D={on:false,watch:null,mk:null,follow:true,idx:0,lock:null,last:null,hd:0};
 function bearing(a,b){const k=Math.PI/180,y=Math.sin((b[1]-a[1])*k)*Math.cos(b[0]*k),x=Math.cos(a[0]*k)*Math.sin(b[0]*k)-Math.sin(a[0]*k)*Math.cos(b[0]*k)*Math.cos((b[1]-a[1])*k);return(Math.atan2(y,x)/k+360)%360}
 async function keepAwake(){try{if('wakeLock' in navigator&&D.on)D.lock=await navigator.wakeLock.request('screen')}catch(e){log('Ekran açık tutulamadı:',e.message)}}
 function startDrive(){
   if(!st.last)return;if(!navigator.geolocation){toast('Bu cihaz konum vermiyor');return}
-  D.on=true;D.follow=true;D.idx=0;D.si=0;D.spoken=new Set();D.off=0;D.lastRe=0;D.arrived=false;D.last=null;say('Sürüş başladı. İyi yolculuklar.',true);document.body.classList.add('driving');sheet('min');posChips();keepAwake();
+  D.on=true;D.follow=true;D.idx=0;D.si=0;D.spoken=new Set();D.off=0;D.lastRe=0;D.arrived=false;D.last=null;say('Sürüş başladı. İyi yolculuklar.',true);G.manual=false;D.wxAt=0;updAutoChip();document.body.classList.add('driving');sheet('min');posChips();keepAwake();
   $('#hudMain').textContent='Konum bekleniyor…';$('#hudSub').textContent='';$('#hudNext').textContent='';$('#hudPoi').textContent='';
-  D.watch=navigator.geolocation.watchPosition(onPos,e=>{$('#hudMain').textContent='Konum alınamıyor';log('Sürüş konumu:',e.message)},{enableHighAccuracy:true,maximumAge:2000,timeout:20000});
+  startLoc();if(LOC.pos)onPos(LOC.pos);
 }
 function stopDrive(){
-  D.on=false;if('speechSynthesis' in window)speechSynthesis.cancel();$('#hudTurn').innerHTML='';if(D.watch!=null)navigator.geolocation.clearWatch(D.watch);D.watch=null;
+  D.on=false;if('speechSynthesis' in window)speechSynthesis.cancel();$('#hudTurn').innerHTML='';
   if(D.lock){D.lock.release().catch(()=>{});D.lock=null}
-  if(D.mk){map.removeLayer(D.mk);D.mk=null}
   document.body.classList.remove('driving');posChips();if(st.last)fitRoute(st.last);
 }
 document.addEventListener('visibilitychange',()=>{if(D.on&&document.visibilityState==='visible')keepAwake()});
@@ -995,11 +1141,7 @@ $('#hudCenter').onclick=()=>{D.follow=true;if(D.last)map.setView(D.last,Math.max
 $('#hudReroute').onclick=()=>reroute(false);
 function onPos(p){
   const R=st.last;if(!R||!D.on)return;const ll=[p.coords.latitude,p.coords.longitude];
-  let hd=p.coords.heading;if((hd==null||isNaN(hd))&&D.last&&distM(D.last,ll)>8)hd=bearing(D.last,ll);
-  if(hd!=null&&!isNaN(hd))D.hd=hd;if(!D.last||distM(D.last,ll)>8)D.last=ll;
-  const html=`<div class="me"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="#2b7cff" stroke="#fff" stroke-width="3"/><path d="M18 7 L25 26 L18 21 L11 26 Z" fill="#fff" transform="rotate(${Math.round(D.hd)} 18 18)"/></svg></div>`;
-  const icon=L.divIcon({className:'',iconSize:[0,0],html});
-  if(!D.mk)D.mk=L.marker(ll,{interactive:false,zIndexOffset:1000,icon}).addTo(map);else{D.mk.setLatLng(ll);D.mk.setIcon(icon)}
+  D.last=ll;
   if(D.follow)map.setView(ll,Math.max(map.getZoom(),14),{animate:true});
   const C=R.rt.coords;let best=1e12,bi=D.idx;
   for(let i=Math.max(0,D.idx-50);i<=Math.min(C.length-1,D.idx+800);i++){const d=distM(ll,C[i]);if(d<best){best=d;bi=i}}
@@ -1010,6 +1152,9 @@ function onPos(p){
   const kmh=p.coords.speed!=null&&!isNaN(p.coords.speed)?p.coords.speed*3.6:0;
   const spd=kmh?` • ${Math.round(kmh)} km/sa`:'';
   if(!off)voiceNav(R,here,kmh);
+  if(Date.now()-(D.wxAt||0)>30000){D.wxAt=Date.now();applyAutoWx(R,here,false)}
+  const cur=R.pts.reduce((b,q)=>Math.abs(q.d-here)<Math.abs(b.d-here)?q:b,R.pts[0]);
+  $('#hudNow').innerHTML=cur&&cur.h?`Şu an: ${wmo(cur.h.code)[0]} ${Math.round(cur.h.temp)}°${cur.a&&cur.a.why.length?' • '+esc(cur.a.why.slice(0,2).join(', ')):''}`:'';
   if(remD<80&&!off){if(!D.arrived){D.arrived=true;say('Varış noktasına ulaştınız. İyi günler.',true)}$('#hudTurn').innerHTML='';$('#hudMain').textContent='Vardın 🎉';$('#hudSub').textContent=R.to.name;$('#hudNext').textContent='';$('#hudPoi').textContent='';return}
   $('#hudMain').textContent=off?'Rotadan çıktın':`${fmtKm(remD)} • ${fmtDur(remT)}`;
   $('#hudSub').textContent=`Varış ~${fmtTime(new Date(Date.now()+remT*1000))}${spd}`;
@@ -1056,13 +1201,14 @@ function openReminder(t){
 /* ---------- Başlangıç ---------- */
 (function init(){
   const d=new Date();d.setMinutes(Math.ceil(d.getMinutes()/15)*15,0,0);$('#inDep').value=localInputValue(d);
-  $('#chPart').classList.toggle('on',S.particles);setLayer(S.layer);renderTrips();
+  $('#chPart').classList.toggle('on',S.particles);setLayer(S.userLayer||S.layer);renderTrips();
   resetParticles();renderField();requestAnimationFrame(animate);loadGrid();
   const tid=new URLSearchParams(location.search).get('trip'),dt=tid&&trips.find(x=>x.id===tid);
   if(dt){history.replaceState(null,'',location.pathname);const o=nextOccs(dt,1)[0]||new Date();runAnalysis(dt.from,dt.to,o,dt.id)}
   else if(tid)toast('Bu seyahat bu telefonda kayıtlı değil');
   if(!dt&&trips.length){const t=trips[0];map.fitBounds(L.latLngBounds([[t.from.lat,t.from.lon],[t.to.lat,t.to.lon]]),{padding:[60,160]});setTimeout(()=>autoCheck(false),1500)}
-  updPoiVis();
+  updPoiVis();updAutoChip();
+  try{navigator.permissions&&navigator.permissions.query({name:'geolocation'}).then(r=>{if(r.state==='granted')startLoc()}).catch(()=>{})}catch(e){}
   if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(e=>log('SW:',e.message));
   log('YolHava '+VERSION+' başladı');
 })();
