@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>YolHava – Gizlilik Politikası ve KVKK Aydınlatma Metni</title>
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--bg:#141a22;--tx:#e9eef4;--mut:#9aa7b8;--line:rgba(255,255,255,.1);--amber:#ffc53d}
+@media (prefers-color-scheme:light){:root{--bg:#f7f8fa;--tx:#1b222c;--mut:#5b6676;--line:rgba(0,0,0,.1);--amber:#b07800}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:max(20px,env(safe-area-inset-top)) 18px max(32px,env(safe-area-inset-bottom))}
+main{max-width:760px;margin:0 auto}
+h1{font-size:26px;line-height:1.2;margin:8px 0 4px}
+h2{font-size:19px;margin:28px 0 8px;padding-top:12px;border-top:1px solid var(--line)}
+h3{font-size:16px;margin:18px 0 6px}
+p,li{color:var(--tx)} .mut{color:var(--mut);font-size:14px}
+ul{padding-left:20px} li{margin:4px 0}
+a{color:var(--amber)}
+.fill{background:#ffe08a;color:#1b1500;padding:0 4px;border-radius:4px;font-weight:600}
+.box{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0}
+th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+.wrap{overflow-x:auto}
+</style>
+</head>
+<body><main>
+<h1>Gizlilik Politikası ve KVKK Aydınlatma Metni</h1>
+<p class="mut">YolHava mobil uygulaması • Son güncelleme: 2 Ekim 2026</p>
+
+<div class="box"><b>Kısaca:</b> YolHava'da hesap yoktur, reklam yoktur, kullanıcı takibi ve analiz aracı yoktur. Kayıtlı seyahatlerin ve ayarların <b>yalnızca kendi telefonunda</b> saklanır; bizim bir sunucumuza gönderilmez. Rota, hava ve yol bilgisi gösterebilmek için seçtiğin konumların koordinatları, aşağıda listelenen harita ve hava servislerine iletilir.</div>
+
+<h2>1. Veri sorumlusu</h2>
+<p>6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında veri sorumlusu:</p>
+<p>Hakan Emrah Güler<br>İletişim: <a href="mailto:yolhava.destek@gmail.com">yolhava.destek@gmail.com</a></p>
+
+<h2>2. İşlenen veriler ve nerede tutuldukları</h2>
+<h3>2.1 Yalnızca telefonunda tutulanlar</h3>
+<p>Aşağıdaki bilgiler uygulamanın tarayıcı depolama alanında, yalnızca senin cihazında saklanır. Bize veya başka birine gönderilmez:</p>
+<ul>
+<li>Kaydettiğin seyahatler (başlangıç ve varış noktası, günler, çıkış saati, tercih ettiğin rota)</li>
+<li>Son kullandığın adresler</li>
+<li>Uygulama ayarları (harita görünümü, ses, katman tercihleri)</li>
+<li>Kendi girdiğin TomTom API anahtarı (varsa)</li>
+<li>Rota üzerindeki istasyonların geçici önbelleği (en fazla 7 gün)</li>
+<li>Uygulama içi hata günlüğü (sadece bellekte; uygulama kapanınca silinir)</li>
+</ul>
+
+<h3>2.2 Konum bilgisi</h3>
+<ul>
+<li>Konumun yalnızca sen izin verdiğinde ve uygulama <b>açıkken</b> kullanılır. Uygulama arka planda konum toplamaz.</li>
+<li>Konum; haritada yerini göstermek, "Konumum"dan rota oluşturmak ve sürüş modunda ilerlemeni hesaplamak için kullanılır.</li>
+<li>Konum geçmişin kaydedilmez, saklanmaz.</li>
+</ul>
+
+<h3>2.3 Üçüncü taraf servislere iletilen bilgiler</h3>
+<p>Uygulama, istediğin bilgiyi gösterebilmek için aşağıdaki servislere doğrudan bağlanır. Bu bağlantılarda ilgili koordinatlar veya arama metni ile birlikte, internetin doğası gereği <b>IP adresin</b> ve tarayıcı bilgisi de bu servislere ulaşır. Bu servislerin bir kısmı yurt dışında bulunmaktadır.</p>
+<div class="wrap"><table>
+<tr><th>Servis</th><th>Ne için</th><th>İletilen bilgi</th><th>Konum</th></tr>
+<tr><td>Open-Meteo</td><td>Hava durumu tahmini</td><td>Rota üzerindeki ve haritadaki noktaların koordinatları</td><td>İsviçre / AB</td></tr>
+<tr><td>OSRM (FOSSGIS sunucusu)</td><td>Rota hesaplama</td><td>Başlangıç ve varış koordinatları</td><td>Almanya</td></tr>
+<tr><td>Photon (Komoot)</td><td>Adres arama, yer adları</td><td>Yazdığın arama metni, harita merkezi, seçilen noktaların koordinatları</td><td>Almanya</td></tr>
+<tr><td>Overpass API (OpenStreetMap)</td><td>Benzinlik ve şarj istasyonları</td><td>Rota çizgisinin koordinatları</td><td>Almanya ve AB</td></tr>
+<tr><td>TomTom</td><td>Kaza, yol çalışması, trafik</td><td>Rota çevresinin koordinat kutuları</td><td>Hollanda / AB</td></tr>
+<tr><td>OpenStreetMap harita karoları</td><td>Harita görüntüsü</td><td>Görüntülenen harita bölgesi</td><td>AB / Birleşik Krallık</td></tr>
+<tr><td>Esri (ArcGIS)</td><td>Yol ve yer adı katmanı</td><td>Görüntülenen harita bölgesi</td><td>ABD</td></tr>
+<tr><td>GitHub Pages, cdnjs (Cloudflare), Google Fonts</td><td>Uygulama dosyalarının ve yazı tiplerinin yüklenmesi</td><td>IP adresi, tarayıcı bilgisi</td><td>ABD</td></tr>
+</table></div>
+<p class="mut">Bu servisler kendi gizlilik politikalarına tabidir. Biz bu servislerden sana ait herhangi bir veri almıyor ve saklamıyoruz.</p>
+
+<h3>2.4 Geri bildirim</h3>
+<p>"Geri bildirim gönder" düğmesi WhatsApp'ı açar ve mesajı kime göndereceğini sen seçersin. Mesaja, istersen kapatabileceğin şekilde, uygulama sürümü, telefon/işletim sistemi bilgisi, son rotanın başlangıç-varış adları ve son hata kayıtları eklenir. Konumun eklenmez. Bu mesaj WhatsApp üzerinden iletildiği için WhatsApp'ın kendi koşulları geçerlidir.</p>
+
+<h3>2.5 Takvim hatırlatıcısı ve sesli komutlar</h3>
+<p>Takvim hatırlatıcısı telefonunda bir takvim dosyası oluşturur veya Google Takvim'i açar; bu bilgi bize iletilmez. Sesli komutlar telefonunun kendi metin okuma motoruyla üretilir.</p>
+
+<h3>2.6 Toplamadıklarımız</h3>
+<ul>
+<li>Ad, telefon numarası, e-posta gibi kimlik veya iletişim bilgisi istemiyoruz (geri bildirimde kendi isteğinle paylaşmadığın sürece).</li>
+<li>Çerez, reklam kimliği, analiz veya izleme aracı kullanmıyoruz.</li>
+<li>Özel nitelikli kişisel veri (sağlık, biyometrik vb.) işlemiyoruz.</li>
+</ul>
+
+<h2>3. İşleme amaçları ve hukuki sebepler</h2>
+<p>Konum ve koordinat bilgilerin; senin talep ettiğin rota, hava durumu, yol olayı ve istasyon bilgisinin sunulması amacıyla, KVKK m.5/2-c uyarınca <b>bir sözleşmenin kurulması veya ifasıyla doğrudan ilgili olması</b> (uygulamanın sunduğu hizmetin yerine getirilmesi) hukuki sebebine dayanılarak işlenir. Konum erişimi ayrıca telefonunun izin ekranı üzerinden senin onayına bağlıdır; izni istediğin zaman telefon ayarlarından geri alabilirsin.</p>
+
+<h2>4. Yurt dışına aktarım</h2>
+<p>Yukarıdaki tabloda belirtilen servislerin bir kısmı yurt dışında bulunduğundan, bu servisleri kullanman, ilgili koordinat bilgilerinin ve IP adresinin yurt dışındaki sunuculara iletilmesi sonucunu doğurur. Bu aktarım, yalnızca senin uygulamada başlattığın bir işlem (ör. rota oluşturma, adres arama) sırasında ve o işlemin yerine getirilmesi için gerçekleşir. Bu konuda sorun veya talebin varsa aşağıdaki iletişim adresinden bize ulaşabilirsin.</p>
+
+<h2>5. Saklama süresi ve silme</h2>
+<ul>
+<li>Telefonunda tutulan bilgiler, sen silene kadar orada kalır.</li>
+<li><b>Ayarlar → Yasal → Tüm verilerimi sil</b> ile tüm kayıtlı seyahatlerini, ayarlarını ve önbelleği tek dokunuşla silebilirsin. Uygulamayı kaldırmak veya tarayıcı verilerini temizlemek de aynı sonucu verir.</li>
+<li>Bizim sunucumuzda senin hakkında saklanan bir veri bulunmamaktadır.</li>
+</ul>
+
+<h2>6. Haklarınız (KVKK m.11)</h2>
+<p>KVKK'nın 11. maddesi uyarınca; kişisel verilerinin işlenip işlenmediğini öğrenme, işlenmişse buna ilişkin bilgi talep etme, işleme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenme, yurt içinde veya yurt dışında aktarıldığı üçüncü kişileri bilme, eksik veya yanlış işlenmişse düzeltilmesini, KVKK m.7 çerçevesinde silinmesini veya yok edilmesini isteme, bu işlemlerin aktarıldığı üçüncü kişilere bildirilmesini isteme, münhasıran otomatik sistemlerle analiz edilmesi sonucu aleyhine bir sonuç çıkmasına itiraz etme ve kanuna aykırı işleme sebebiyle zarara uğraman hâlinde zararın giderilmesini talep etme haklarına sahipsin.</p>
+<p>Başvurularını <a href="mailto:yolhava.destek@gmail.com">yolhava.destek@gmail.com</a> adresine iletebilirsin. Başvurular en geç 30 gün içinde ücretsiz olarak sonuçlandırılır.</p>
+
+<h2>7. Çocuklar</h2>
+<p>YolHava bir sürüş ve yolculuk planlama uygulamasıdır; çocuklara yönelik değildir ve bilerek çocuklardan veri toplamaz.</p>
+
+<h2>8. Güvenlik</h2>
+<p>Uygulama ile servisler arasındaki tüm bağlantılar şifreli (HTTPS) yapılır. Telefonunda saklanan bilgilerin güvenliği, cihazının kilit ekranı ve güvenlik ayarlarına bağlıdır.</p>
+
+<h2>9. Değişiklikler</h2>
+<p>Uygulamaya yeni özellikler (ör. bildirim sunucusu, hesap, ücretli paket) eklendiğinde bu metin güncellenecek ve güncel hâli bu sayfada yayımlanacaktır. Önemli değişiklikler uygulama içinde ayrıca duyurulur.</p>
+
+<h2>10. İletişim</h2>
+<p>Hakan Emrah Güler • <a href="mailto:yolhava.destek@gmail.com">yolhava.destek@gmail.com</a></p>
+<p class="mut"><a href="kosullar.html">Kullanım Koşulları ve Sorumluluk Reddi</a> • <a href="./">Uygulamaya dön</a></p>
+</main></body>
+</html>

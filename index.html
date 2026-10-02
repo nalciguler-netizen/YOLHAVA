@@ -42,6 +42,10 @@ canvas.ov{position:absolute;left:0;top:0;pointer-events:none;transition:opacity 
 #top{position:fixed;left:10px;right:10px;top:calc(var(--safeT) + 10px);z-index:1000;background:var(--panel);
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;padding:6px 8px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
 #top .row{display:flex;gap:6px;align-items:center;margin:4px 0}
+#top .inw{flex:1;min-width:0;position:relative;display:flex}
+#top .inw input{padding-right:38px}
+.clr{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:30px;height:30px;border:0;border-radius:50%;background:rgba(255,255,255,.14);color:var(--tx);font-size:20px;line-height:1;display:none;padding:0}
+.inw.has .clr{display:block}
 #top input{flex:1;min-width:0;background:var(--raise);border:1px solid var(--line);color:var(--tx);border-radius:9px;padding:9px 10px;font-size:16px}
 #top input[type=datetime-local]{font-size:15px;color-scheme:dark}
 .pin{width:12px;height:12px;flex:none;border-radius:50%;border:2px solid var(--asphalt);box-shadow:0 0 0 2px currentColor;background:currentColor}
@@ -175,8 +179,8 @@ body[data-style=dark] .yh-base{filter:invert(1) hue-rotate(180deg) brightness(1.
 
 <div id="top">
   <div id="topSum"><span id="topSumTx"></span><button class="btn pri" id="btnStart">▶ Başla</button><button class="ib" id="btnEdit" aria-label="Rotayı düzenle">✎</button></div>
-  <div class="row"><span class="pin a"></span><input id="inFrom" placeholder="Nereden?" autocomplete="off" enterkeyhint="next"><button class="ib" id="btnGps" aria-label="Konumumu başlangıç yap">◎</button></div>
-  <div class="row"><span class="pin b"></span><input id="inTo" placeholder="Nereye?" autocomplete="off" enterkeyhint="go"><button class="ib" id="btnSwap" aria-label="Yer değiştir">⇅</button></div>
+  <div class="row"><span class="pin a"></span><span class="inw"><input id="inFrom" placeholder="Nereden?" autocomplete="off" enterkeyhint="next"><button class="clr" id="clrFrom" aria-label="Başlangıcı temizle">×</button></span><button class="ib" id="btnGps" aria-label="Konumumu başlangıç yap">◎</button></div>
+  <div class="row"><span class="pin b"></span><span class="inw"><input id="inTo" placeholder="Nereye?" autocomplete="off" enterkeyhint="go"><button class="clr" id="clrTo" aria-label="Varışı temizle">×</button></span><button class="ib" id="btnSwap" aria-label="Yer değiştir">⇅</button></div>
   <div class="row"><input id="inDep" type="datetime-local" aria-label="Çıkış zamanı"><button class="btn pri" id="btnGo">Yolu kontrol et</button></div>
   <div id="sugg"></div>
 </div>
@@ -232,6 +236,9 @@ body[data-style=dark] .yh-base{filter:invert(1) hue-rotate(180deg) brightness(1.
       <h3>Yedek</h3>
       <div class="acts"><button class="btn sm" id="btnExport">Seyahatleri kopyala</button><button class="btn sm" id="btnImport">Yedekten yükle</button></div>
       <details><summary class="sm">Hata günlüğü</summary><pre id="logbox"></pre><button class="btn sm" id="btnCopyLog">Günlüğü kopyala</button></details>
+      <h3>Yasal</h3>
+      <div class="acts"><a class="btn sm" href="gizlilik.html" target="_blank" rel="noopener" style="text-decoration:none">Gizlilik ve KVKK</a><a class="btn sm" href="kosullar.html" target="_blank" rel="noopener" style="text-decoration:none">Kullanım koşulları ve atıflar</a></div>
+      <button class="btn sm" id="btnWipe" style="border-color:#ff4057;color:#ff8a9a">🗑️ Tüm verilerimi sil</button>
       <p class="mut sm" id="ver"></p>
     </section>
   </div>
@@ -242,7 +249,7 @@ body[data-style=dark] .yh-base{filter:invert(1) hue-rotate(180deg) brightness(1.
 
 <script>
 'use strict';
-const VERSION='1.5.2';
+const VERSION='1.6.0';
 // Sitene kısıtlı ortak TomTom anahtarı (test kullanıcıları için). Boşsa herkes kendi anahtarını girer.
 const DEFAULT_TT='';
 const ttKey=()=>(S.key||DEFAULT_TT).replace(/\s+/g,'');
@@ -321,7 +328,7 @@ function assess(h){
 const map=L.map('map',{zoomControl:false,attributionControl:true,worldCopyJump:true}).setView([37.0,35.0],8);
 map.attributionControl.setPosition('bottomleft');
 const basePane=map.createPane('basePane');basePane.style.zIndex=150;basePane.classList.add('yh-base');
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{pane:'basePane',maxZoom:19,attribution:'© OpenStreetMap katkıcıları | Hava: Open-Meteo | Rota: OSRM'}).addTo(map);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{pane:'basePane',maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> katkıcıları | <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a> | Rota: OSRM | Arama: Photon'}).addTo(map);
 document.body.dataset.style=S.style;
 function setStyle(s){S.style=s;saveS();document.body.dataset.style=s}
 
@@ -526,8 +533,7 @@ map.on('click',e=>{
 });
 window.setPt=async(which,lat,lon)=>{
   map.closePopup();const p={name:`${lat.toFixed(4)}, ${lon.toFixed(4)}`,lat,lon};choose(which,p,true);
-  try{const r=await getJSON(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=14&accept-language=tr`);
-    if(r&&r.display_name){p.name=r.display_name.split(', ').slice(0,2).join(', ');(which==='from'?$('#inFrom'):$('#inTo')).value=p.name}}catch(e){log('Ters adres',e.message)}
+  try{const n=await reverseName(lat,lon,false);if(n){p.name=n;(which==='from'?$('#inFrom'):$('#inTo')).value=n;updClr()}}catch(e){log('Ters adres',e.message)}
   if(st.from&&st.to)go();
 };
 
@@ -540,10 +546,22 @@ function locate(){return new Promise((res,rej)=>{
     navigator.geolocation.getCurrentPosition(ok,e2=>rej(new Error(e2.message||'konum bulunamadı')),{enableHighAccuracy:false,timeout:10000,maximumAge:600000});
   },{enableHighAccuracy:true,timeout:8000,maximumAge:60000});
 })}
+// Adres arama: Photon (Komoot) – yazarken öneri (otomatik tamamlama) için uygun açık servis
+function photonName(pr){
+  const first=pr.name||[pr.street,pr.housenumber].filter(Boolean).join(' ');
+  const parts=[first,pr.district,pr.city,pr.county,pr.state].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i);
+  return{name:parts.slice(0,2).join(', '),full:[...parts,pr.country].filter(Boolean).join(', ')};
+}
 async function geocode(q){
-  const u=c=>`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&accept-language=tr${c?'&countrycodes=tr':''}&q=${encodeURIComponent(q)}`;
-  let d=await getJSON(u(true));if(!d.length)d=await getJSON(u(false));
-  return d.map(x=>{const parts=x.display_name.split(', ');return{name:parts.slice(0,2).join(', '),full:x.display_name,lat:+x.lat,lon:+x.lon}});
+  const c=map.getCenter(),base=`https://photon.komoot.io/api/?limit=6&lat=${c.lat.toFixed(3)}&lon=${c.lng.toFixed(3)}&q=${encodeURIComponent(q)}`;
+  let d=await getJSON(base+'&bbox=25.5,35.7,45.0,42.2');
+  if(!d.features||!d.features.length)d=await getJSON(base);
+  return(d.features||[]).map(f=>({...photonName(f.properties||{}),lat:f.geometry.coordinates[1],lon:f.geometry.coordinates[0]}));
+}
+async function reverseName(lat,lon,town){
+  const d=await getJSON(`https://photon.komoot.io/reverse?lat=${lat}&lon=${lon}&limit=1`);
+  const pr=(d.features&&d.features[0]&&d.features[0].properties)||{};
+  return town?(pr.county||pr.city||pr.district||pr.name||''):photonName(pr).name;
 }
 let sugTimer=null;
 function hideSug(){$('#sugg').innerHTML=''}
@@ -571,8 +589,14 @@ function showRecent(which){
     if(p.gps){hideSug();try{const g=await locate();choose(which,{name:'Konumum',lat:g.lat,lon:g.lon},true)}catch(er){toast('Konum alınamadı: '+er.message)}}else choose(which,p)};
 }
 bindSearch($('#inFrom'),'from');bindSearch($('#inTo'),'to');
+function updClr(){['From','To'].forEach(k=>$('#in'+k).parentElement.classList.toggle('has',!!$('#in'+k).value))}
+['from','to'].forEach(w=>{const K=w==='from'?'From':'To',inp=$('#in'+K);
+  inp.addEventListener('input',updClr);
+  $('#clr'+K).addEventListener('mousedown',e=>e.preventDefault());
+  $('#clr'+K).onclick=()=>{inp.value='';st[w]=null;drawPts();updClr();inp.focus();showRecent(w)};
+});
 function choose(which,p,noRecent){
-  st[which]=p;(which==='from'?$('#inFrom'):$('#inTo')).value=p.name;hideSug();drawPts();
+  st[which]=p;(which==='from'?$('#inFrom'):$('#inTo')).value=p.name;hideSug();drawPts();updClr();
   if(!noRecent&&p.name!=='Konumum'){recent=[{name:p.name,lat:p.lat,lon:p.lon},...recent.filter(r=>r.name!==p.name)].slice(0,8);store.set('recent',recent)}
   if(which==='from'&&!st.to)$('#inTo').focus();else document.activeElement&&document.activeElement.blur();
 }
@@ -582,7 +606,7 @@ function drawPts(){
   if(st.to)L.circleMarker([st.to.lat,st.to.lon],{radius:8,color:'#141a22',weight:3,fillColor:'#ff4057',fillOpacity:1}).addTo(ptLayer);
 }
 $('#btnGps').onclick=async()=>{try{const g=await locate();startLoc();choose('from',{name:'Konumum',lat:g.lat,lon:g.lon},true);map.setView([g.lat,g.lon],11)}catch(e){toast('Konum alınamadı: '+e.message)}};
-$('#btnSwap').onclick=()=>{[st.from,st.to]=[st.to,st.from];const a=$('#inFrom').value;$('#inFrom').value=$('#inTo').value;$('#inTo').value=a;drawPts()};
+$('#btnSwap').onclick=()=>{setTimeout(updClr);[st.from,st.to]=[st.to,st.from];const a=$('#inFrom').value;$('#inFrom').value=$('#inTo').value;$('#inTo').value=a;drawPts()};
 $('#btnEdit').onclick=()=>$('#top').classList.remove('compact');
 $('#btnStart').onclick=()=>startDrive();
 $('#btnGo').onclick=()=>go();
@@ -750,7 +774,7 @@ async function analyze(from,to,depart,opt={}){
 }
 
 async function runAnalysis(from,to,dep,tripId,opt){
-  st.from=from;st.to=to;$('#inFrom').value=from.name;$('#inTo').value=to.name;$('#inDep').value=localInputValue(dep);drawPts();
+  st.from=from;st.to=to;$('#inFrom').value=from.name;$('#inTo').value=to.name;updClr();$('#inDep').value=localInputValue(dep);drawPts();
   if(!D.on){setTab('route');sheet('mid')}
   $('#t-route').innerHTML='<div class="loader"><i></i>Rota, hava ve yol olayları hesaplanıyor…</div>';
   try{
@@ -1045,6 +1069,27 @@ function openFeedback(context){
   };
 }
 $('#btnFeedback').onclick=()=>openFeedback('');
+$('#btnWipe').onclick=()=>{
+  if(!confirm('Kayıtlı seyahatlerin, ayarların, son aramaların ve önbellek bu telefondan silinecek. Emin misin?'))return;
+  try{Object.keys(localStorage).filter(k=>k.startsWith('yh_')).forEach(k=>localStorage.removeItem(k))}catch(e){}
+  try{caches&&caches.keys().then(ks=>ks.forEach(k=>caches.delete(k)))}catch(e){}
+  toast('Tüm veriler silindi');setTimeout(()=>location.reload(),800);
+};
+/* İlk açılışta güvenlik ve koşullar onayı */
+function showConsent(){
+  const m=$('#modal');
+  m.innerHTML=`<div class="mbox"><h3>Hoş geldin 👋</h3>
+    <p class="sm"><b>⚠️ Güvenliğin için:</b></p>
+    <ul class="sm" style="padding-left:18px;margin:4px 0 10px">
+      <li><b>Sürerken uygulamayla uğraşma.</b> Rotayı yola çıkmadan hazırla, telefonu tutucuya yerleştir.</li>
+      <li>Hava, kaza ve yol bilgileri <b>tahmindir</b>. Trafik kuralları, yol işaretleri ve resmi kurumların duyuruları her zaman önceliklidir.</li>
+      <li>Uyarı görünmemesi yolun güvenli olduğu anlamına gelmez.</li>
+    </ul>
+    <p class="mut sm">Kayıtlı seyahatlerin sadece bu telefonda tutulur. Rota ve hava bilgisi için seçtiğin noktaların koordinatları harita ve hava servislerine iletilir. Ayrıntılar: <a href="gizlilik.html" target="_blank" rel="noopener" style="color:var(--amber)">Gizlilik ve KVKK</a> • <a href="kosullar.html" target="_blank" rel="noopener" style="color:var(--amber)">Kullanım koşulları</a></p>
+    <div class="acts"><button class="btn pri" id="cAccept" style="flex:1">Anladım, kabul ediyorum</button></div></div>`;
+  m.hidden=false;m.onclick=null;
+  $('#cAccept').onclick=()=>{store.set('consent',{v:1,at:Date.now()});m.hidden=true};
+}
 
 /* ---------- Uyarı bölgelerine yer adı ---------- */
 const placeCache=new Map();let placeQ=Promise.resolve();
@@ -1052,10 +1097,9 @@ function placeName(ll){
   const k=ll[0].toFixed(2)+','+ll[1].toFixed(2);if(placeCache.has(k))return Promise.resolve(placeCache.get(k));
   placeQ=placeQ.then(async()=>{
     if(placeCache.has(k))return placeCache.get(k);
-    try{const r=await getJSON(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${ll[0]}&lon=${ll[1]}&zoom=10&accept-language=tr`);
-      const a=r.address||{};const n=a.town||a.city_district||a.county||a.city||a.village||a.municipality||a.province||(r.display_name||'').split(',')[0];placeCache.set(k,n||'');}
+    try{placeCache.set(k,await reverseName(ll[0],ll[1],true)||'')}
     catch(e){placeCache.set(k,'')}
-    await new Promise(z=>setTimeout(z,1100));return placeCache.get(k);
+    await new Promise(z=>setTimeout(z,400));return placeCache.get(k);
   });
   return placeQ;
 }
@@ -1076,15 +1120,33 @@ function routeRef(rt){
   return rt._ref=ref;
 }
 function nearestOnRoute(rt,pt){let best=1e12,bi=0;for(const i of routeRef(rt)){const d=distM(pt,rt.coords[i]);if(d<best){best=d;bi=i}}return{i:bi,dist:best}}
+const OVERPASS=['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
+let ovpI=0;
+async function overpass(q){
+  let last='';
+  for(let k=0;k<OVERPASS.length;k++){
+    const j=(ovpI+k)%OVERPASS.length,u=OVERPASS[j],c=new AbortController(),tm=setTimeout(()=>c.abort(),25000);
+    try{const r=await fetch(u,{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:c.signal});
+      if(!r.ok)throw new Error(String(r.status));const d=await r.json();ovpI=j;return d}
+    catch(e){last=e.name==='AbortError'?'zaman aşımı':(e.message||'hata');log('İstasyon sunucusu',new URL(u).host,'→',last)}
+    finally{clearTimeout(tm)}
+  }
+  throw new Error('istasyon sunucuları yanıt vermedi ('+last+')');
+}
+function poiKey(rt){const a=rt.coords[0],b=rt.coords[rt.coords.length-1];return'poi:'+[a[0],a[1],b[0],b[1]].map(v=>v.toFixed(2)).join(',')+':'+Math.round(rt.distance/1000)}
 async function fetchPois(rt){
+  const ck=poiKey(rt),cache=store.get('poicache',{});
+  if(cache[ck]&&Date.now()-cache[ck].at<7*864e5)return cache[ck].list;
+  const list=await fetchPoisLive(rt);
+  cache[ck]={at:Date.now(),list};const keys=Object.keys(cache).sort((x,y)=>cache[y].at-cache[x].at);keys.slice(12).forEach(k=>delete cache[k]);
+  store.set('poicache',cache);return list;
+}
+async function fetchPoisLive(rt){
   const C=rt.coords,Dd=rt.cumD,step=Math.max(1500,rt.distance/180),pts=[];let next=0;
   for(let i=0;i<C.length;i++)if(Dd[i]>=next||i===C.length-1){pts.push(C[i]);next=Dd[i]+step}
   const line=pts.map(p=>p[0].toFixed(4)+','+p[1].toFixed(4)).join(',');
   const q=`[out:json][timeout:40];(nwr["amenity"="fuel"](around:250,${line});nwr["amenity"="charging_station"](around:250,${line}););out center tags 500;`;
-  const c=new AbortController();const tm=setTimeout(()=>c.abort(),45000);
-  let r;try{r=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:c.signal})}finally{clearTimeout(tm)}
-  if(!r.ok)throw new Error('istasyon servisi '+r.status);
-  const d=await r.json();
+  const d=await overpass(q);
   const list=(d.elements||[]).map(e=>{
     const lat=e.lat??(e.center&&e.center.lat),lon=e.lon??(e.center&&e.center.lon);if(lat==null)return null;
     const t=e.tags||{},ev=t.amenity==='charging_station',n=nearestOnRoute(rt,[lat,lon]);
@@ -1316,6 +1378,7 @@ function openReminder(t){
   else if(tid)toast('Bu seyahat bu telefonda kayıtlı değil');
   if(!dt&&trips.length){const t=trips[0];map.fitBounds(L.latLngBounds([[t.from.lat,t.from.lon],[t.to.lat,t.to.lon]]),{padding:[60,160]});setTimeout(()=>autoCheck(false),1500)}
   updPoiVis();updAutoChip();
+  if(!store.get('consent',null))showConsent();
   try{navigator.permissions&&navigator.permissions.query({name:'geolocation'}).then(r=>{if(r.state==='granted')startLoc()}).catch(()=>{})}catch(e){}
   if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(e=>log('SW:',e.message));
   log('YolHava '+VERSION+' başladı');
