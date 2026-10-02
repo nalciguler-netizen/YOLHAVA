@@ -242,7 +242,7 @@ body[data-style=dark] .yh-base{filter:invert(1) hue-rotate(180deg) brightness(1.
 
 <script>
 'use strict';
-const VERSION='1.5.1';
+const VERSION='1.5.2';
 // Sitene kısıtlı ortak TomTom anahtarı (test kullanıcıları için). Boşsa herkes kendi anahtarını girer.
 const DEFAULT_TT='';
 const ttKey=()=>(S.key||DEFAULT_TT).replace(/\s+/g,'');
@@ -599,9 +599,19 @@ async function go(){
 
 /* ---------- Rota + hava + olay analizi ---------- */
 async function getRoutes(a,b){
-  const d=await getJSON(`https://router.project-osrm.org/route/v1/driving/${a.lon},${a.lat};${b.lon},${b.lat}?overview=full&geometries=geojson&annotations=duration,distance&steps=true&alternatives=3`,25000);
+  const base=`https://router.project-osrm.org/route/v1/driving/${a.lon},${a.lat};${b.lon},${b.lat}?overview=full&geometries=geojson&annotations=duration,distance&steps=true`;
+  const d=await getJSON(base+'&alternatives=3',25000);
   if(d.code!=='Ok'||!d.routes||!d.routes.length)throw new Error('Bu iki nokta arasında karayolu rotası bulunamadı');
-  return d.routes.map(parseRoute);
+  const routes=d.routes.map(parseRoute);
+  // Servis alternatif vermediyse: otoyol/ücretli yol kullanmayan rotayı ayrıca iste
+  if(routes.length<2&&(routes[0].motor||routes[0].toll)){
+    try{const e=await getJSON(base+'&exclude='+(routes[0].motor?'motorway':'toll'),20000);
+      if(e.code==='Ok'&&e.routes&&e.routes.length){const r2=parseRoute(e.routes[0]);
+        if(Math.abs(r2.distance-routes[0].distance)>500||r2.key!==routes[0].key)routes.push(r2)}}
+    catch(er){log('Alternatif rota alınamadı:',er.message)}
+  }
+  log('Rota sayısı:',String(routes.length));
+  return routes;
 }
 async function getRoute(a,b){return(await getRoutes(a,b))[0]}
 function parseRoute(r){
@@ -1111,9 +1121,9 @@ function drawPois(R){
     .bindPopup(`<b>${esc(p.name)}</b><br>${Math.round(p.d/1000)}. km${p.alsoEv?' • 🔌 şarj da var':''}${p.extra?'<br>'+esc(p.extra):''}`));
   declutter();updPoiVis();
 }
-function updPoiVis(){const on=S.poi&&map.getZoom()>=12;if(on&&!map.hasLayer(poiLayer))poiLayer.addTo(map);if(!on&&map.hasLayer(poiLayer))map.removeLayer(poiLayer);$('#chPoi').classList.toggle('on',S.poi)}
+function updPoiVis(){const on=S.poi&&map.getZoom()>=9;if(on&&!map.hasLayer(poiLayer))poiLayer.addTo(map);if(!on&&map.hasLayer(poiLayer))map.removeLayer(poiLayer);$('#chPoi').classList.toggle('on',S.poi)}
 map.on('zoomend',updPoiVis);
-$('#chPoi').onclick=()=>{S.poi=!S.poi;saveS();updPoiVis();toast(S.poi?'İstasyonlar yakınlaştırınca görünür':'İstasyonlar gizlendi')};
+$('#chPoi').onclick=()=>{S.poi=!S.poi;saveS();updPoiVis();toast(S.poi?'İstasyonlar gösteriliyor':'İstasyonlar gizlendi')};
 function renderPoiBox(R){
   const el=$('#poiBox');if(!el)return;
   if(!R.pois){el.innerHTML=`<span class="err">İstasyonlar alınamadı${R.poiErr?': '+esc(R.poiErr):''}</span>`;return}
