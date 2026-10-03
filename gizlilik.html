@@ -26,13 +26,13 @@ th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-alig
 </head>
 <body><main>
 <h1>Gizlilik Politikası ve KVKK Aydınlatma Metni</h1>
-<p class="mut">YolHava mobil uygulaması • Son güncelleme: 2 Ekim 2026</p>
+<p class="mut">YolHava mobil uygulaması • Son güncelleme: 2 Ekim 2026 (sürüm 2.0)</p>
 
 <div class="box"><b>Kısaca:</b> YolHava'da hesap yoktur, reklam yoktur, kullanıcı takibi ve analiz aracı yoktur. Kayıtlı seyahatlerin ve ayarların <b>yalnızca kendi telefonunda</b> saklanır; bizim bir sunucumuza gönderilmez. Rota, hava ve yol bilgisi gösterebilmek için seçtiğin konumların koordinatları, aşağıda listelenen harita ve hava servislerine iletilir.</div>
 
 <h2>1. Veri sorumlusu</h2>
 <p>6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında veri sorumlusu:</p>
-<p>Hakan Emrah Güler<br>İletişim: <a href="mailto:yolhava.destek@gmail.com">yolhava.destek@gmail.com</a></p>
+<p>Yurdagül Güler<br>İletişim: <a href="mailto:yolhava.destek@gmail.com">yolhava.destek@gmail.com</a></p>
 
 <h2>2. İşlenen veriler ve nerede tutuldukları</h2>
 <h3>2.1 Yalnızca telefonunda tutulanlar</h3>
@@ -43,13 +43,14 @@ th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-alig
 <li>Uygulama ayarları (harita görünümü, ses, katman tercihleri)</li>
 <li>Kendi girdiğin TomTom API anahtarı (varsa)</li>
 <li>Rota üzerindeki istasyonların geçici önbelleği (en fazla 7 gün)</li>
+<li>"Çevrimdışı için indir" ile kaydettiğin seyahat paketleri: rota, yol tarifi, hava tahmini, o anki yol olayları, istasyonlar ve rota çevresinin harita parçaları</li>
 <li>Uygulama içi hata günlüğü (sadece bellekte; uygulama kapanınca silinir)</li>
 </ul>
 
 <h3>2.2 Konum bilgisi</h3>
 <ul>
 <li>Konumun yalnızca sen izin verdiğinde ve uygulama <b>açıkken</b> kullanılır. Uygulama arka planda konum toplamaz.</li>
-<li>Konum; haritada yerini göstermek, "Konumum"dan rota oluşturmak ve sürüş modunda ilerlemeni hesaplamak için kullanılır.</li>
+<li>Konum; haritada yerini göstermek, "Konumum"dan rota oluşturmak ve sürüş modunda ilerlemeni, hızını ve bulunduğun yolun hız sınırını göstermek için kullanılır. Hız bilgin yalnızca telefonunda işlenir; hiçbir yere gönderilmez ve kaydedilmez.</li>
 <li>Konum geçmişin kaydedilmez, saklanmaz.</li>
 </ul>
 
@@ -58,13 +59,12 @@ th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-alig
 <div class="wrap"><table>
 <tr><th>Servis</th><th>Ne için</th><th>İletilen bilgi</th><th>Konum</th></tr>
 <tr><td>Open-Meteo</td><td>Hava durumu tahmini</td><td>Rota üzerindeki ve haritadaki noktaların koordinatları</td><td>İsviçre / AB</td></tr>
-<tr><td>OSRM (FOSSGIS sunucusu)</td><td>Rota hesaplama</td><td>Başlangıç ve varış koordinatları</td><td>Almanya</td></tr>
+<tr><td>TomTom</td><td>Rota hesaplama (trafik dahil), hız sınırları, kaza ve yol çalışması, trafik katmanı</td><td>Başlangıç ve varış koordinatları, rota çevresinin koordinat kutuları</td><td>Hollanda / AB</td></tr>
+<tr><td>OpenFreeMap</td><td>Harita görüntüsü</td><td>Görüntülenen harita bölgesi</td><td>AB</td></tr>
 <tr><td>Photon (Komoot)</td><td>Adres arama, yer adları</td><td>Yazdığın arama metni, harita merkezi, seçilen noktaların koordinatları</td><td>Almanya</td></tr>
 <tr><td>Overpass API (OpenStreetMap)</td><td>Benzinlik ve şarj istasyonları</td><td>Rota çizgisinin koordinatları</td><td>Almanya ve AB</td></tr>
-<tr><td>TomTom</td><td>Kaza, yol çalışması, trafik</td><td>Rota çevresinin koordinat kutuları</td><td>Hollanda / AB</td></tr>
-<tr><td>OpenStreetMap harita karoları</td><td>Harita görüntüsü</td><td>Görüntülenen harita bölgesi</td><td>AB / Birleşik Krallık</td></tr>
-<tr><td>Esri (ArcGIS)</td><td>Yol ve yer adı katmanı</td><td>Görüntülenen harita bölgesi</td><td>ABD</td></tr>
-<tr><td>GitHub Pages, cdnjs (Cloudflare), Google Fonts</td><td>Uygulama dosyalarının ve yazı tiplerinin yüklenmesi</td><td>IP adresi, tarayıcı bilgisi</td><td>ABD</td></tr>
+<tr><td>OSRM (FOSSGIS) ve OpenStreetMap harita sunucuları</td><td>Yalnızca yedek: TomTom veya vektör harita kullanılamadığında</td><td>Başlangıç ve varış koordinatları / görüntülenen bölge</td><td>Almanya / AB, Birleşik Krallık</td></tr>
+<tr><td>GitHub Pages, jsDelivr, cdnjs (Cloudflare), Google Fonts</td><td>Uygulama dosyalarının, harita kütüphanesinin ve yazı tiplerinin yüklenmesi</td><td>IP adresi, tarayıcı bilgisi</td><td>ABD ve küresel ağ</td></tr>
 </table></div>
 <p class="mut">Bu servisler kendi gizlilik politikalarına tabidir. Biz bu servislerden sana ait herhangi bir veri almıyor ve saklamıyoruz.</p>
 
@@ -90,7 +90,7 @@ th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-alig
 <h2>5. Saklama süresi ve silme</h2>
 <ul>
 <li>Telefonunda tutulan bilgiler, sen silene kadar orada kalır.</li>
-<li><b>Ayarlar → Yasal → Tüm verilerimi sil</b> ile tüm kayıtlı seyahatlerini, ayarlarını ve önbelleği tek dokunuşla silebilirsin. Uygulamayı kaldırmak veya tarayıcı verilerini temizlemek de aynı sonucu verir.</li>
+<li><b>Ayarlar → Yasal → Tüm verilerimi sil</b> ile tüm kayıtlı seyahatlerini, çevrimdışı paketlerini, ayarlarını ve önbelleği tek dokunuşla silebilirsin. Uygulamayı kaldırmak veya tarayıcı verilerini temizlemek de aynı sonucu verir.</li>
 <li>Bizim sunucumuzda senin hakkında saklanan bir veri bulunmamaktadır.</li>
 </ul>
 
@@ -108,7 +108,7 @@ th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-alig
 <p>Uygulamaya yeni özellikler (ör. bildirim sunucusu, hesap, ücretli paket) eklendiğinde bu metin güncellenecek ve güncel hâli bu sayfada yayımlanacaktır. Önemli değişiklikler uygulama içinde ayrıca duyurulur.</p>
 
 <h2>10. İletişim</h2>
-<p>Hakan Emrah Güler • <a href="mailto:yolhava.destek@gmail.com">yolhava.destek@gmail.com</a></p>
+<p>Yurdagül Güler • <a href="mailto:yolhava.destek@gmail.com">yolhava.destek@gmail.com</a></p>
 <p class="mut"><a href="kosullar.html">Kullanım Koşulları ve Sorumluluk Reddi</a> • <a href="./">Uygulamaya dön</a></p>
 </main></body>
 </html>
