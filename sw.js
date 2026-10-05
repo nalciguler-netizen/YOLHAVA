@@ -1,7 +1,7 @@
 // YolHava service worker v2
 // - Uygulama dosyaları: önce ağ, yoksa önbellek (güncellemeler hemen gelsin)
 // - Harita parçaları/yazı tipleri: önbellekte varsa oradan (çevrimdışı paketler), yoksa ağdan
-const V='yolhava-v2.1';
+const V='yolhava-v2.2';
 const SHELL=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png','./gizlilik.html','./kosullar.html','./privacy.html','./terms.html',
  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css',
  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js',
@@ -11,7 +11,9 @@ const SHELL=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.
 const KEEP=[V,'yh-tiles','yh-offline'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(V).then(c=>Promise.all(SHELL.map(u=>c.add(u).catch(()=>{})))))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>!KEEP.includes(x)).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
-const netFirst=req=>fetch(req).then(r=>{if(r.ok){const c=r.clone();caches.open(V).then(x=>x.put(req,c))}return r}).catch(()=>caches.match(req).then(r=>r||caches.match('./index.html')));
+// Kendi dosyalarımız tarayıcının 10 dk'lık önbelleğini atlayarak her seferinde taze istenir
+const fresh=req=>new URL(req.url).origin===location.origin?fetch(req.url,{cache:'no-cache',credentials:'same-origin'}):fetch(req);
+const netFirst=req=>fresh(req).then(r=>{if(r.ok){const c=r.clone();caches.open(V).then(x=>x.put(req,c))}return r}).catch(()=>caches.match(req).then(r=>r||caches.match('./index.html')));
 self.addEventListener('fetch',e=>{
   const req=e.request;if(req.method!=='GET')return;
   const u=new URL(req.url);
