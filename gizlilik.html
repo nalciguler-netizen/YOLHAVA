@@ -27,7 +27,7 @@ th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-alig
 <body><main>
 <p class="mut"><a href="privacy.html">English</a></p>
 <h1>Gizlilik Politikası ve KVKK Aydınlatma Metni</h1>
-<p class="mut">YolHava mobil uygulaması • Son güncelleme: 2 Ekim 2026 (sürüm 2.1)</p>
+<p class="mut">YolHava mobil uygulaması • Son güncelleme: 6 Ekim 2026 (sürüm 2.3)</p>
 
 <div class="box"><b>Kısaca:</b> YolHava'da hesap yoktur, reklam yoktur, kullanıcı takibi ve analiz aracı yoktur. Kayıtlı seyahatlerin ve ayarların <b>yalnızca kendi telefonunda</b> saklanır; bizim bir sunucumuza gönderilmez. Rota, hava ve yol bilgisi gösterebilmek için seçtiğin konumların koordinatları, aşağıda listelenen harita ve hava servislerine iletilir.</div>
 
@@ -65,17 +65,20 @@ th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-alig
 <tr><td>Photon (Komoot)</td><td>Adres arama, yer adları</td><td>Yazdığın arama metni, harita merkezi, seçilen noktaların koordinatları</td><td>Almanya</td></tr>
 <tr><td>Overpass API (OpenStreetMap)</td><td>Benzinlik ve şarj istasyonları</td><td>Rota çizgisinin koordinatları</td><td>Almanya ve AB</td></tr>
 <tr><td>OSRM (FOSSGIS) ve OpenStreetMap harita sunucuları</td><td>Yalnızca yedek: TomTom veya vektör harita kullanılamadığında</td><td>Başlangıç ve varış koordinatları / görüntülenen bölge</td><td>Almanya / AB, Birleşik Krallık</td></tr>
+<tr><td>Cloudflare (YolHava sunucusu)</td><td>Kaza ve yol bildirimlerini saklamak ve göstermek</td><td>Bildirimin kategorisi, konumu, yönü, zamanı, rastgele cihaz numarası; bildirimleri görüntülerken rota çevresinin koordinat kutusu</td><td>ABD ve küresel ağ</td></tr>
 <tr><td>GitHub Pages, jsDelivr, cdnjs (Cloudflare), Google Fonts</td><td>Uygulama dosyalarının, harita kütüphanesinin ve yazı tiplerinin yüklenmesi</td><td>IP adresi, tarayıcı bilgisi</td><td>ABD ve küresel ağ</td></tr>
 </table></div>
 <p class="mut">Bu servisler kendi gizlilik politikalarına tabidir. Biz bu servislerden sana ait herhangi bir veri almıyor ve saklamıyoruz.</p>
 
-<h3>2.4 Geri bildirim</h3>
+<h3>2.4 Kaza ve yol bildirimleri</h3>
+<p>“Olay bildir” özelliğini kullanırsan, bildirimin <b>kategorisi</b> (ör. kaza, yol çalışması), <b>konumu</b>, <b>gidiş yönün</b>, <b>zamanı</b> ve uygulamanın bu telefon için ürettiği <b>rastgele bir cihaz numarası</b> sunucumuza kaydedilir. Ad, telefon numarası veya hesap bilgisi alınmaz. Bildirimin kategorisi, konumu ve zamanı diğer kullanıcılara gösterilir; cihaz numarası gösterilmez, yalnızca kötüye kullanımı (çok sık bildirim, aynı kişinin tekrar oy vermesi) önlemek için kullanılır. Bildirimin yanından geçerken verdiğin “hâlâ orada mı?” cevapları da aynı cihaz numarasıyla kaydedilir. Bildirimler kategorisine göre birkaç saat içinde görünmez olur ve en geç 1 gün sonra tamamen silinir. Bu sunucu Cloudflare altyapısında çalışır.</p>
+<h3>2.5 Geri bildirim</h3>
 <p>"Geri bildirim gönder" düğmesi WhatsApp'ı açar ve mesajı kime göndereceğini sen seçersin. Mesaja, istersen kapatabileceğin şekilde, uygulama sürümü, telefon/işletim sistemi bilgisi, son rotanın başlangıç-varış adları ve son hata kayıtları eklenir. Konumun eklenmez. Bu mesaj WhatsApp üzerinden iletildiği için WhatsApp'ın kendi koşulları geçerlidir.</p>
 
-<h3>2.5 Takvim hatırlatıcısı ve sesli komutlar</h3>
+<h3>2.6 Takvim hatırlatıcısı ve sesli komutlar</h3>
 <p>Takvim hatırlatıcısı telefonunda bir takvim dosyası oluşturur veya Google Takvim'i açar; bu bilgi bize iletilmez. Sesli komutlar telefonunun kendi metin okuma motoruyla üretilir.</p>
 
-<h3>2.6 Toplamadıklarımız</h3>
+<h3>2.7 Toplamadıklarımız</h3>
 <ul>
 <li>Ad, telefon numarası, e-posta gibi kimlik veya iletişim bilgisi istemiyoruz (geri bildirimde kendi isteğinle paylaşmadığın sürece).</li>
 <li>Çerez, reklam kimliği, analiz veya izleme aracı kullanmıyoruz.</li>
@@ -92,7 +95,7 @@ th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-alig
 <ul>
 <li>Telefonunda tutulan bilgiler, sen silene kadar orada kalır.</li>
 <li><b>Ayarlar → Yasal → Tüm verilerimi sil</b> ile tüm kayıtlı seyahatlerini, çevrimdışı paketlerini, ayarlarını ve önbelleği tek dokunuşla silebilirsin. Uygulamayı kaldırmak veya tarayıcı verilerini temizlemek de aynı sonucu verir.</li>
-<li>Bizim sunucumuzda senin hakkında saklanan bir veri bulunmamaktadır.</li>
+<li>Sunucumuzda yalnızca yaptığın kaza ve yol bildirimleri ile verdiğin onay oyları tutulur; bunlar en geç 1 gün içinde otomatik olarak silinir. Silinmeden önce kaldırılmasını istersen bize yazabilirsin.</li>
 </ul>
 
 <h2>6. Haklarınız (KVKK m.11)</h2>
