@@ -59,7 +59,7 @@ th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-alig
 <tr><td>Photon (Komoot)</td><td>Address search and place names</td><td>Your search text, map centre, coordinates of chosen points</td><td>Germany</td></tr>
 <tr><td>Overpass API (OpenStreetMap)</td><td>Fuel and charging stations</td><td>Coordinates of the route line</td><td>Germany and EU</td></tr>
 <tr><td>OSRM (FOSSGIS) and OpenStreetMap tile servers</td><td>Fallback only, when TomTom or the vector map is unavailable</td><td>Start and destination coordinates / the area being viewed</td><td>Germany / EU, United Kingdom</td></tr>
-<tr><td>Cloudflare (YolHava server)</td><td>Storing and showing accident and road reports</td><td>Report category, location, direction, time, random device number; when viewing reports, a bounding box around the route</td><td>USA and global network</td></tr>
+<tr><td>Cloudflare (YolHava server)</td><td>Storing and showing accident and road reports; relaying TomTom requests (to keep the key private and to cache results)</td><td>Report category, location, direction, time, random device number; when viewing reports, a bounding box around the route; start and destination coordinates forwarded to TomTom (not stored, cached for at most 10 minutes)</td><td>USA and global network</td></tr>
 <tr><td>GitHub Pages, jsDelivr, cdnjs (Cloudflare), Google Fonts</td><td>Loading the app files, map library and fonts</td><td>IP address, browser details</td><td>USA and global network</td></tr>
 </table></div>
 <p class="mut">These services have their own privacy policies. We do not receive or store any of your data from them.</p>
