@@ -1,7 +1,7 @@
-// YolHava service worker v2
+// YolHava service worker v2 — © 2026 Yurdagül Güler, tüm hakları saklıdır (bkz. LICENSE)
 // - Uygulama dosyaları: önce ağ, yoksa önbellek (güncellemeler hemen gelsin)
 // - Harita parçaları/yazı tipleri: önbellekte varsa oradan (çevrimdışı paketler), yoksa ağdan
-const V='yolhava-v2.4.0';
+const V='yolhava-v2.5.0';
 const SHELL=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png','./gizlilik.html','./kosullar.html','./privacy.html','./terms.html',
  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css',
  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js',
